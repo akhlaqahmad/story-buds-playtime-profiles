@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface StoryRequest {
@@ -21,41 +20,48 @@ export class StoryGenerator {
   private static async generateStoryWithAI(request: StoryRequest): Promise<GeneratedStory> {
     const { age, personality, interests, dislikes, category } = request;
     
-    // Create a detailed prompt for the AI to generate SSML-enhanced stories
-    const prompt = `Create a children's story for a ${age}-year-old child with the following characteristics:
-    
-Personality: ${personality}
-Interests: ${interests.join(', ')}
-${dislikes ? `Dislikes: ${dislikes}` : ''}
-Category: ${category || 'adventure'}
+    // Create a detailed prompt for longer, structured stories
+    const prompt = `Create a complete children's story for a ${age}-year-old child with these characteristics:
 
-Requirements:
-- Age-appropriate language for a ${age}-year-old
-- Story should be engaging and match their ${personality} personality
-- Include elements related to their interests: ${interests.join(', ')}
+CHILD PROFILE:
+- Age: ${age} years old
+- Personality: ${personality}
+- Interests: ${interests.join(', ')}
+${dislikes ? `- Dislikes: ${dislikes}` : ''}
+- Story Category: ${category || 'adventure'}
+
+STORY REQUIREMENTS:
+- Length: 400-600 words (5-7 minute reading time)
+- Structure: Clear beginning, middle, and end
+- Beginning: Introduce the main character and setting
+- Middle: Create an engaging adventure or challenge
+- End: Resolve the story with a positive lesson
+
+CONTENT GUIDELINES:
+- Use vocabulary appropriate for a ${age}-year-old
+- Include the child's interests: ${interests.join(', ')}
+- Match their ${personality} personality
 ${dislikes ? `- Avoid mentioning: ${dislikes}` : ''}
-- Keep the story between 150-300 words for a 3-5 minute reading time
-- Include dialogue to make it interactive
-- End with a positive, educational message
-- Use simple sentences and vocabulary appropriate for the age group
-- Make the story unique and creative each time
-- Generate both a clean text version and an SSML version for expressive speech
+- Include dialogue and descriptive scenes
+- Create memorable characters
+- End with a meaningful lesson about friendship, kindness, courage, or learning
 
-SSML Requirements:
-- Use <break time="1s"/> for dramatic pauses
-- Use <emphasis level="moderate"> for important words
-- Use <prosody rate="slow"> for suspenseful moments
-- Use <prosody rate="fast"> for exciting action
-- Use <prosody pitch="high"> for character voices
-- Add appropriate breaks and emphasis to make the story more engaging
+STORY ELEMENTS TO INCLUDE:
+- Vivid descriptions of settings
+- Character emotions and growth
+- A clear problem and solution
+- Exciting but age-appropriate action
+- A satisfying, complete ending
+
+Please write a complete story that feels like a real children's book - with a proper beginning that sets the scene, a middle that builds excitement, and an ending that brings everything together beautifully.
 
 Format your response as:
-TITLE: [Story Title]
-STORY: [Clean Story Content - no SSML markup]
+TITLE: [Creative Story Title]
+STORY: [Complete Story Content]
 SSML: [Story Content with SSML markup for expressive reading]`;
 
     try {
-      console.log('Calling AI story generation with prompt:', prompt.substring(0, 200) + '...');
+      console.log('Calling AI story generation with enhanced prompt for longer stories');
       
       const { data, error } = await supabase.functions.invoke('generate-story-ai', {
         body: { prompt }
@@ -73,10 +79,10 @@ SSML: [Story Content with SSML markup for expressive reading]`;
 
       // Parse the AI response
       const response = data.generatedText;
-      console.log('AI generated response:', response.substring(0, 200) + '...');
+      console.log('AI generated response length:', response.length);
       
       const titleMatch = response.match(/TITLE:\s*(.*?)(?:\n|STORY:)/i);
-      const storyMatch = response.match(/STORY:\s*(.*?)(?:\n|SSML:)/i);
+      const storyMatch = response.match(/STORY:\s*(.*?)(?:\n|SSML:)/is);
       const ssmlMatch = response.match(/SSML:\s*([\s\S]*)/i);
 
       const title = titleMatch ? titleMatch[1].trim() : `The ${personality.charAt(0).toUpperCase() + personality.slice(1)} Adventure`;
@@ -86,23 +92,21 @@ SSML: [Story Content with SSML markup for expressive reading]`;
       // If we don't have separate content, extract clean text from the response
       if (!content && !ssmlContent) {
         content = response.replace(/^TITLE:\s*.*?\n/i, '').trim();
-        ssmlContent = content; // Fallback to same content if no SSML provided
+        ssmlContent = content;
       } else if (!content && ssmlContent) {
-        // Extract clean text from SSML
         content = ssmlContent.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
       } else if (content && !ssmlContent) {
-        // Use content as SSML base if no SSML provided
         ssmlContent = content;
       }
 
       // Ensure we have valid content
-      if (!content || content.length < 50) {
-        throw new Error('Generated story content is too short or invalid. Please try again.');
+      if (!content || content.length < 200) {
+        throw new Error('Generated story content is too short. Please try again.');
       }
 
-      // Estimate duration based on word count (average reading speed for children's stories)
+      // Estimate duration based on word count (longer stories now)
       const wordCount = content.split(/\s+/).length;
-      const duration = Math.max(120, Math.min(300, wordCount * 0.8)); // 0.8 seconds per word
+      const duration = Math.max(300, Math.min(450, wordCount * 0.7)); // 0.7 seconds per word for longer stories
 
       console.log('Successfully generated AI story:', { title, wordCount, duration });
 
@@ -115,7 +119,6 @@ SSML: [Story Content with SSML markup for expressive reading]`;
       };
     } catch (error) {
       console.error('Error calling AI story generation:', error);
-      // Don't fall back to hardcoded stories - throw the error so user knows AI is required
       throw new Error(`Story generation failed: ${error.message}. Please ensure your OpenAI API key is configured correctly.`);
     }
   }

@@ -39,12 +39,33 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are a creative children\'s story writer who creates engaging, age-appropriate stories. Always follow the format requested and keep stories positive and educational. Create unique, original stories each time - never repeat the same story. Be creative and imaginative while keeping content appropriate for young children.' 
+            content: `You are a creative children's story writer who creates engaging, age-appropriate stories. 
+
+IMPORTANT STORY STRUCTURE REQUIREMENTS:
+- Create stories that are 400-600 words long for a 5-7 minute reading experience
+- Follow a clear 3-act structure:
+  * BEGINNING (25%): Introduce characters, setting, and initial situation
+  * MIDDLE (50%): Develop the main conflict or adventure with rising action
+  * END (25%): Resolve the conflict with a satisfying conclusion and lesson
+
+CONTENT REQUIREMENTS:
+- Use age-appropriate language and vocabulary
+- Include dialogue to make it engaging
+- Create vivid descriptions that spark imagination
+- End with a positive, educational message
+- Make each story unique and original
+- Keep content wholesome and appropriate for young children
+
+FORMATTING:
+- Write in clear, flowing paragraphs
+- Use simple but descriptive language
+- Include emotional moments and character growth
+- Make it feel complete and satisfying` 
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 1000,
-        temperature: 0.9, // Higher creativity for unique story generation
+        max_tokens: 1500,
+        temperature: 0.8,
       }),
     });
 
