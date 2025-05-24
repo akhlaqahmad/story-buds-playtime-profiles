@@ -3,8 +3,8 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sparkles, Heart } from "lucide-react";
 import { ChildProfile } from '../QuestionnaireWizard';
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from 'react-router-dom';
 
 interface QuestionnaireCompleteProps {
   profile: ChildProfile;
@@ -15,6 +15,7 @@ interface QuestionnaireCompleteProps {
 const QuestionnaireComplete = ({ profile, onProfileSaved }: QuestionnaireCompleteProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const interests = [
     { id: 'animals', label: 'Animals', emoji: '🦁' },
@@ -38,51 +39,23 @@ const QuestionnaireComplete = ({ profile, onProfileSaved }: QuestionnaireComplet
   const handleCreateStory = async () => {
     setIsLoading(true);
     try {
-      // For now, we'll create a demo profile without authentication
-      // In a real app, you'd need authentication first
-      const { data: profileData, error: profileError } = await supabase
-        .from('child_profiles')
-        .insert({
-          age: profile.age,
-          personality: profile.personality,
-          interests: profile.interests,
-          dislikes: profile.dislikes || null,
-          user_id: '00000000-0000-0000-0000-000000000000' // Demo user ID
-        })
-        .select()
-        .single();
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        toast({
-          title: "Demo Mode",
-          description: "Profile saved locally! In the full version, you'd need to log in first.",
-          variant: "default"
-        });
-        
-        // Store profile locally for demo
-        localStorage.setItem('childProfile', JSON.stringify(profile));
-        onProfileSaved?.('demo-profile');
-        return;
-      }
-
+      // Store profile locally for demo (skip authentication)
+      localStorage.setItem('childProfile', JSON.stringify(profile));
+      
       toast({
         title: "Profile Saved! 🎉",
-        description: "Your story profile has been created successfully!",
+        description: "Ready to create your magical story!",
       });
 
-      onProfileSaved?.(profileData.id);
+      // Navigate to story demo page
+      navigate('/story-demo');
     } catch (error) {
       console.error('Error:', error);
       toast({
-        title: "Demo Mode",
-        description: "Profile saved locally! Story creation coming soon!",
-        variant: "default"
+        title: "Something went wrong",
+        description: "Please try again!",
+        variant: "destructive"
       });
-      
-      // Store profile locally for demo
-      localStorage.setItem('childProfile', JSON.stringify(profile));
-      onProfileSaved?.('demo-profile');
     } finally {
       setIsLoading(false);
     }
@@ -157,7 +130,7 @@ const QuestionnaireComplete = ({ profile, onProfileSaved }: QuestionnaireComplet
         className="bg-gradient-to-r from-kidGreen to-kidBlue hover:from-green-400 hover:to-blue-400 text-white font-fredoka text-2xl py-8 px-12 rounded-full shadow-2xl transform transition-all duration-300 hover:scale-110 animate-pulse-fun disabled:opacity-50"
       >
         <Heart className="mr-3 w-8 h-8" />
-        {isLoading ? 'Saving Profile...' : 'Create My Story!'}
+        {isLoading ? 'Creating Story...' : 'Create My Story!'}
         <Sparkles className="ml-3 w-8 h-8" />
       </Button>
 

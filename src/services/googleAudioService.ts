@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 
 export class GoogleAudioService {
@@ -23,7 +22,10 @@ export class GoogleAudioService {
   }
 
   static async playTextToSpeech(text: string): Promise<void> {
+    console.log('🎵 Starting TTS for text:', text.substring(0, 50) + '...')
+    
     try {
+      console.log('📞 Calling Google TTS API...')
       const { data, error } = await supabase.functions.invoke('google-text-to-speech', {
         body: { 
           text,
@@ -32,8 +34,19 @@ export class GoogleAudioService {
         }
       })
 
-      if (error) throw error
+      console.log('📞 TTS API Response:', { data: !!data, error })
 
+      if (error) {
+        console.error('❌ TTS API Error:', error)
+        throw error
+      }
+
+      if (!data || !data.audioContent) {
+        console.error('❌ No audio content received from TTS API')
+        throw new Error('No audio content received')
+      }
+
+      console.log('🔄 Converting audio data to blob...')
       // Convert base64 audio to blob and play
       const audioBytes = atob(data.audioContent)
       const audioArray = new Uint8Array(audioBytes.length)
@@ -44,26 +57,42 @@ export class GoogleAudioService {
       const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' })
       const audioUrl = URL.createObjectURL(audioBlob)
       
+      console.log('🔇 Stopping any current audio...')
       // Stop any currently playing audio
       if (this.currentAudio) {
         this.currentAudio.pause()
         this.currentAudio = null
       }
 
+      console.log('🎵 Creating and playing audio element...')
       const audio = new Audio(audioUrl)
       this.currentAudio = audio
       
       return new Promise((resolve, reject) => {
         audio.onended = () => {
+          console.log('✅ Audio playback completed')
           URL.revokeObjectURL(audioUrl)
           this.currentAudio = null
           resolve()
         }
-        audio.onerror = reject
-        audio.play()
+        audio.onerror = (error) => {
+          console.error('❌ Audio playback error:', error)
+          URL.revokeObjectURL(audioUrl)
+          this.currentAudio = null
+          reject(error)
+        }
+        audio.onloadstart = () => console.log('🔄 Audio loading started')
+        audio.oncanplay = () => console.log('✅ Audio can play')
+        audio.onplay = () => console.log('▶️ Audio started playing')
+        
+        console.log('🎵 Starting audio play...')
+        audio.play().catch(error => {
+          console.error('❌ Failed to start audio playback:', error)
+          reject(error)
+        })
       })
     } catch (error) {
-      console.error('Error playing text-to-speech:', error)
+      console.error('❌ Error in playTextToSpeech:', error)
       throw error
     }
   }
@@ -120,6 +149,7 @@ export class GoogleAudioService {
   }
 
   static stopAllAudio() {
+    console.log('🛑 Stopping all audio')
     if (this.currentAudio) {
       this.currentAudio.pause()
       this.currentAudio = null
