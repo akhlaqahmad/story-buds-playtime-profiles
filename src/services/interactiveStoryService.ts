@@ -22,55 +22,67 @@ export class InteractiveStoryService {
     const questions: StoryQuestion[] = []
     const storyLength = story.duration || 180 // Default 3 minutes
     
+    // Calculate better question timing based on story length
+    const questionIntervals = Math.floor(storyLength / 4) // Questions every quarter of the story
+    
     // Generate questions based on story category
     if (story.category === 'math') {
       questions.push({
-        timestamp: 60,
+        timestamp: questionIntervals,
         question: "What is 2 plus 2? Say the number!",
         type: 'educational',
         expectedAnswer: '4'
       })
       questions.push({
-        timestamp: 120,
+        timestamp: questionIntervals * 2,
         question: "How many fingers do you have on one hand?",
         type: 'educational',
         expectedAnswer: '5'
       })
+      questions.push({
+        timestamp: questionIntervals * 3,
+        question: "What comes after the number 9?",
+        type: 'educational',
+        expectedAnswer: '10'
+      })
     } else if (story.category === 'ABCs') {
       questions.push({
-        timestamp: 45,
+        timestamp: questionIntervals,
         question: "What letter comes after B? Say the letter!",
         type: 'educational',
         expectedAnswer: 'C'
       })
       questions.push({
-        timestamp: 90,
+        timestamp: questionIntervals * 2,
         question: "Can you say the letter that starts your name?",
         type: 'open'
+      })
+      questions.push({
+        timestamp: questionIntervals * 3,
+        question: "What letter makes the 'mmm' sound?",
+        type: 'educational',
+        expectedAnswer: 'M'
       })
     } else {
       // Adventure/general stories
       questions.push({
-        timestamp: 60,
+        timestamp: questionIntervals,
         question: "What do you think the main character should do next?",
         type: 'open'
       })
       questions.push({
-        timestamp: 120,
+        timestamp: questionIntervals * 2,
         question: "What is your favorite part of the story so far?",
         type: 'open'
       })
-    }
-
-    // Add a final question
-    if (storyLength > 150) {
       questions.push({
-        timestamp: storyLength - 30,
-        question: "Did you enjoy this story? Say yes or no!",
+        timestamp: questionIntervals * 3,
+        question: "If you were in this story, what would you do?",
         type: 'open'
       })
     }
 
+    console.log('Generated questions with timing:', questions)
     return questions
   }
 
@@ -129,8 +141,14 @@ export class InteractiveStoryService {
     if (normalizedExpected === '5') {
       return ['5', 'five'].includes(normalizedResponse)
     }
+    if (normalizedExpected === '10') {
+      return ['10', 'ten'].includes(normalizedResponse)
+    }
     if (normalizedExpected === 'c') {
       return ['c', 'see', 'sea'].includes(normalizedResponse)
+    }
+    if (normalizedExpected === 'm') {
+      return ['m', 'em'].includes(normalizedResponse)
     }
 
     return normalizedResponse === normalizedExpected
