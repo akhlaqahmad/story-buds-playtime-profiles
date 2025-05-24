@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
@@ -28,12 +27,21 @@ const QuestionnaireWizard = ({ onBack }: QuestionnaireWizardProps) => {
     dislikes: ''
   });
 
+  const handleProfileSaved = (profileId: string) => {
+    // Navigate to story creation/library page
+    console.log('Profile saved with ID:', profileId);
+    // For now, just show success - in full implementation this would navigate to stories
+  };
+
   const steps = [
     { component: AgeSelection, title: "How old are you?" },
     { component: PersonalitySelection, title: "What's your personality like?" },
     { component: InterestSelection, title: "What do you love?" },
     { component: DislikesInput, title: "Anything you don't like in stories?" },
-    { component: QuestionnaireComplete, title: "All done!" }
+    { 
+      component: (props: any) => <QuestionnaireComplete {...props} onProfileSaved={handleProfileSaved} />, 
+      title: "All done!" 
+    }
   ];
 
   const currentStepComponent = steps[currentStep];
@@ -90,6 +98,7 @@ const QuestionnaireWizard = ({ onBack }: QuestionnaireWizardProps) => {
       </div>
 
       {/* Main content */}
+      
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Title */}

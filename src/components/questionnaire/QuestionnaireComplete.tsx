@@ -1,14 +1,21 @@
 
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Sparkles, Heart } from "lucide-react";
 import { ChildProfile } from '../QuestionnaireWizard';
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface QuestionnaireCompleteProps {
   profile: ChildProfile;
   setProfile: (profile: ChildProfile) => void;
+  onProfileSaved?: (profileId: string) => void;
 }
 
-const QuestionnaireComplete = ({ profile }: QuestionnaireCompleteProps) => {
+const QuestionnaireComplete = ({ profile, onProfileSaved }: QuestionnaireCompleteProps) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+
   const interests = [
     { id: 'animals', label: 'Animals', emoji: '🦁' },
     { id: 'space', label: 'Space', emoji: '🚀' },
@@ -28,17 +35,57 @@ const QuestionnaireComplete = ({ profile }: QuestionnaireCompleteProps) => {
     return personalities.find(p => p.id === profile.personality);
   };
 
-  const getInterestEmojis = () => {
-    return profile.interests.map(interestId => {
-      const interest = interests.find(i => i.id === interestId);
-      return interest?.emoji;
-    }).join(' ');
-  };
+  const handleCreateStory = async () => {
+    setIsLoading(true);
+    try {
+      // For now, we'll create a demo profile without authentication
+      // In a real app, you'd need authentication first
+      const { data: profileData, error: profileError } = await supabase
+        .from('child_profiles')
+        .insert({
+          age: profile.age,
+          personality: profile.personality,
+          interests: profile.interests,
+          dislikes: profile.dislikes || null,
+          user_id: '00000000-0000-0000-0000-000000000000' // Demo user ID
+        })
+        .select()
+        .single();
 
-  const handleCreateStory = () => {
-    console.log('Profile completed:', profile);
-    // This would typically navigate to story creation or save to database
-    alert('🎉 Profile saved! Story creation coming soon!');
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        toast({
+          title: "Demo Mode",
+          description: "Profile saved locally! In the full version, you'd need to log in first.",
+          variant: "default"
+        });
+        
+        // Store profile locally for demo
+        localStorage.setItem('childProfile', JSON.stringify(profile));
+        onProfileSaved?.('demo-profile');
+        return;
+      }
+
+      toast({
+        title: "Profile Saved! 🎉",
+        description: "Your story profile has been created successfully!",
+      });
+
+      onProfileSaved?.(profileData.id);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Demo Mode",
+        description: "Profile saved locally! Story creation coming soon!",
+        variant: "default"
+      });
+      
+      // Store profile locally for demo
+      localStorage.setItem('childProfile', JSON.stringify(profile));
+      onProfileSaved?.('demo-profile');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -106,10 +153,11 @@ const QuestionnaireComplete = ({ profile }: QuestionnaireCompleteProps) => {
       {/* Call to action */}
       <Button
         onClick={handleCreateStory}
-        className="bg-gradient-to-r from-kidGreen to-kidBlue hover:from-green-400 hover:to-blue-400 text-white font-fredoka text-2xl py-8 px-12 rounded-full shadow-2xl transform transition-all duration-300 hover:scale-110 animate-pulse-fun"
+        disabled={isLoading}
+        className="bg-gradient-to-r from-kidGreen to-kidBlue hover:from-green-400 hover:to-blue-400 text-white font-fredoka text-2xl py-8 px-12 rounded-full shadow-2xl transform transition-all duration-300 hover:scale-110 animate-pulse-fun disabled:opacity-50"
       >
         <Heart className="mr-3 w-8 h-8" />
-        Create My Story!
+        {isLoading ? 'Saving Profile...' : 'Create My Story!'}
         <Sparkles className="ml-3 w-8 h-8" />
       </Button>
 

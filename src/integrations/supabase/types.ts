@@ -9,7 +9,83 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      child_profiles: {
+        Row: {
+          age: number
+          created_at: string
+          dislikes: string | null
+          id: string
+          interests: string[]
+          personality: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          dislikes?: string | null
+          id?: string
+          interests: string[]
+          personality: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          dislikes?: string | null
+          id?: string
+          interests?: string[]
+          personality?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      stories: {
+        Row: {
+          audio_url: string | null
+          category: string
+          child_profile_id: string | null
+          content: string
+          created_at: string
+          duration: number | null
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          category: string
+          child_profile_id?: string | null
+          content: string
+          created_at?: string
+          duration?: number | null
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          category?: string
+          child_profile_id?: string | null
+          content?: string
+          created_at?: string
+          duration?: number | null
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stories_child_profile_id_fkey"
+            columns: ["child_profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
