@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Play, Pause, RotateCcw, Mic, MicOff } from "lucide-react"
@@ -22,9 +23,12 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   const [microphoneStream, setMicrophoneStream] = useState<MediaStream | null>(null)
   const [responseTimeout, setResponseTimeout] = useState<NodeJS.Timeout | null>(null)
   const [currentSentenceIndex, setCurrentSentenceIndex] = useState(0)
+  const [currentWordIndex, setCurrentWordIndex] = useState(0)
+  const [askedQuestions, setAskedQuestions] = useState<Set<number>>(new Set())
   
   const storyStartTime = useRef<number>(0)
   const sentences = useRef<string[]>([])
+  const words = useRef<string[]>([])
   const playbackController = useRef<{ shouldStop: boolean }>({ shouldStop: false })
 
   useEffect(() => {
@@ -49,8 +53,9 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
       // Generate questions for this story
       const storyQuestions = InteractiveStoryService.getQuestionsForStory(storyData)
       setQuestions(storyQuestions)
+      console.log('Generated questions:', storyQuestions)
       
-      // Split story into sentences - improved parsing
+      // Split story into sentences and words
       const content = storyData.content || ''
       const splitSentences = content
         .split(/[.!?]+/)
@@ -59,7 +64,16 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
         .map(s => s + '.')
       
       sentences.current = splitSentences
-      console.log('Parsed sentences:', sentences.current.length, sentences.current)
+      
+      // Split entire content into words for highlighting
+      const allWords = content
+        .replace(/[.!?]+/g, ' .')
+        .split(/\s+/)
+        .filter(w => w.length > 0)
+      
+      words.current = allWords
+      console.log('Parsed sentences:', sentences.current.length)
+      console.log('Parsed words:', words.current.length)
     } catch (error) {
       console.error('Error loading story:', error)
     } finally {
@@ -111,11 +125,12 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
         // Check if we should ask a question at this point
         const elapsedTime = (Date.now() - storyStartTime.current) / 1000
         const pendingQuestion = questions.find(q => 
-          q.timestamp <= elapsedTime && !currentQuestion
+          q.timestamp <= elapsedTime && !askedQuestions.has(q.timestamp)
         )
         
         if (pendingQuestion && !playbackController.current.shouldStop) {
           console.log('❓ Pausing story for question:', pendingQuestion)
+          setAskedQuestions(prev => new Set([...prev, pendingQuestion.timestamp]))
           // PAUSE the story playback when asking question
           setIsPlaying(false)
           playbackController.current.shouldStop = true
@@ -124,10 +139,10 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
           break
         }
         
-        // Speak the sentence
+        // Speak the sentence with word highlighting
         if (!playbackController.current.shouldStop) {
           try {
-            await GoogleAudioService.playTextToSpeech(sentence)
+            await speakSentenceWithHighlighting(sentence, i)
             console.log(`✅ Finished playing sentence ${i + 1}`)
           } catch (error) {
             console.error(`❌ Error playing sentence ${i + 1}:`, error)
@@ -154,6 +169,36 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
       console.error('❌ Error during story playback:', error)
       setIsPlaying(false)
     }
+  }
+
+  const speakSentenceWithHighlighting = async (sentence: string, sentenceIndex: number) => {
+    const sentenceWords = sentence.split(/\s+/).filter(w => w.length > 0)
+    const wordsPerSecond = 2.5 // Approximate speaking rate
+    const wordDuration = 1000 / wordsPerSecond // ms per word
+    
+    // Find the starting word index for this sentence
+    let wordStartIndex = 0
+    for (let i = 0; i < sentenceIndex; i++) {
+      const prevSentence = sentences.current[i]
+      const prevWords = prevSentence.split(/\s+/).filter(w => w.length > 0)
+      wordStartIndex += prevWords.length
+    }
+    
+    // Start playing the audio
+    const audioPromise = GoogleAudioService.playTextToSpeech(sentence)
+    
+    // Highlight words progressively
+    const highlightPromise = (async () => {
+      for (let i = 0; i < sentenceWords.length; i++) {
+        if (playbackController.current.shouldStop) break
+        
+        setCurrentWordIndex(wordStartIndex + i)
+        await new Promise(resolve => setTimeout(resolve, wordDuration))
+      }
+    })()
+    
+    // Wait for both audio and highlighting to complete
+    await Promise.all([audioPromise, highlightPromise])
   }
 
   const askQuestion = async (question: StoryQuestion) => {
@@ -291,14 +336,33 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     setIsPlaying(false)
     setCurrentPosition(0)
     setCurrentSentenceIndex(0)
+    setCurrentWordIndex(0)
     setCurrentQuestion(null)
     setIsWaitingForResponse(false)
     setIsRecording(false)
+    setAskedQuestions(new Set())
     GoogleAudioService.stopAllAudio()
     if (responseTimeout) {
       clearTimeout(responseTimeout)
       setResponseTimeout(null)
     }
+  }
+
+  const renderHighlightedText = () => {
+    if (words.current.length === 0) return story.content
+
+    return words.current.map((word, index) => (
+      <span
+        key={index}
+        className={`${
+          index === currentWordIndex && isPlaying
+            ? 'bg-yellow-300 text-gray-900 font-bold'
+            : ''
+        } transition-all duration-200`}
+      >
+        {word}{' '}
+      </span>
+    ))
   }
 
   if (isLoading) {
@@ -398,15 +462,17 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
 
           {/* Story Player Card */}
           <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl">
-            {/* Story Content Preview */}
+            {/* Story Content Preview with Highlighting */}
             <div className="bg-gradient-to-r from-kidYellow/20 to-kidPink/20 rounded-2xl p-6 mb-8 max-h-64 overflow-y-auto">
               <h3 className="font-fredoka text-xl font-bold text-gray-800 mb-4">Story Preview:</h3>
-              <p className="font-fredoka text-lg text-gray-700 leading-relaxed">
-                {story.content.substring(0, 200)}...
-              </p>
+              <div className="font-fredoka text-lg text-gray-700 leading-relaxed">
+                {renderHighlightedText()}
+              </div>
               <div className="mt-4 text-sm text-gray-600">
                 <p>Sentences parsed: {sentences.current.length}</p>
                 <p>Current sentence: {currentSentenceIndex}/{sentences.current.length}</p>
+                <p>Current word: {currentWordIndex}/{words.current.length}</p>
+                <p>Questions asked: {askedQuestions.size}/{questions.length}</p>
                 {currentQuestion && (
                   <p className="text-orange-600 font-semibold">⏸️ Story paused for question</p>
                 )}
