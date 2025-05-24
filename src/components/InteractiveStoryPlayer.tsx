@@ -115,9 +115,13 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
         )
         
         if (pendingQuestion && !playbackController.current.shouldStop) {
-          console.log('❓ Asking question:', pendingQuestion)
+          console.log('❓ Pausing story for question:', pendingQuestion)
+          // PAUSE the story playback when asking question
+          setIsPlaying(false)
+          playbackController.current.shouldStop = true
           await askQuestion(pendingQuestion)
-          if (playbackController.current.shouldStop) break // User might have stopped during question
+          // After question is handled, user needs to manually continue
+          break
         }
         
         // Speak the sentence
@@ -153,6 +157,13 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   }
 
   const askQuestion = async (question: StoryQuestion) => {
+    console.log('❓ Asking question and stopping story:', question)
+    
+    // STOP all story audio immediately
+    GoogleAudioService.stopAllAudio()
+    playbackController.current.shouldStop = true
+    setIsPlaying(false)
+    
     setCurrentQuestion(question)
     setIsWaitingForResponse(true)
     
@@ -160,18 +171,20 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
       // Play the question
       await GoogleAudioService.playTextToSpeech(question.question)
       
-      // Set timeout for response (10 seconds)
+      // Set timeout for response (15 seconds)
       const timeout = setTimeout(async () => {
         if (isWaitingForResponse) {
+          console.log('⏰ Question timeout, asking again')
           await GoogleAudioService.playTextToSpeech("Let me ask that again. " + question.question)
-          // Give another 10 seconds
+          // Give another 15 seconds
           const secondTimeout = setTimeout(() => {
+            console.log('⏰ Second timeout, continuing story')
             setIsWaitingForResponse(false)
             setCurrentQuestion(null)
-          }, 10000)
+          }, 15000)
           setResponseTimeout(secondTimeout)
         }
-      }, 10000)
+      }, 15000)
       
       setResponseTimeout(timeout)
     } catch (error) {
@@ -184,6 +197,12 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   const startRecording = async () => {
     if (!microphoneStream || isRecording) return
     
+    console.log('🎤 Starting recording - stopping all audio')
+    // STOP all audio when starting to record
+    GoogleAudioService.stopAllAudio()
+    playbackController.current.shouldStop = true
+    setIsPlaying(false)
+    
     try {
       await GoogleAudioService.startRecording(microphoneStream)
       setIsRecording(true)
@@ -194,6 +213,8 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
 
   const stopRecording = async () => {
     if (!isRecording) return
+    
+    console.log('🎤 Stopping recording')
     
     try {
       const transcript = await GoogleAudioService.stopRecording()
@@ -210,6 +231,8 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
 
   const handleResponse = async (response: string) => {
     if (!currentQuestion) return
+    
+    console.log('📝 Handling response:', response)
     
     // Clear timeout
     if (responseTimeout) {
@@ -243,9 +266,11 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     
     await GoogleAudioService.playTextToSpeech(feedback)
     
-    // Continue story
+    // Clear question state
     setCurrentQuestion(null)
     setIsWaitingForResponse(false)
+    
+    console.log('✅ Response handled, ready to continue story')
   }
 
   const pauseStory = () => {
@@ -253,11 +278,10 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     playbackController.current.shouldStop = true
     setIsPlaying(false)
     GoogleAudioService.stopAllAudio()
-    setCurrentQuestion(null)
-    setIsWaitingForResponse(false)
-    if (responseTimeout) {
-      clearTimeout(responseTimeout)
-      setResponseTimeout(null)
+    
+    // If recording, stop it
+    if (isRecording) {
+      stopRecording()
     }
   }
 
@@ -269,6 +293,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     setCurrentSentenceIndex(0)
     setCurrentQuestion(null)
     setIsWaitingForResponse(false)
+    setIsRecording(false)
     GoogleAudioService.stopAllAudio()
     if (responseTimeout) {
       clearTimeout(responseTimeout)
@@ -359,6 +384,12 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
                         🎤 Listening... Speak your answer!
                       </p>
                     )}
+                    
+                    {!isRecording && (
+                      <p className="font-fredoka text-sm text-gray-600">
+                        Press "Speak Now" to answer the question
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -376,6 +407,9 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
               <div className="mt-4 text-sm text-gray-600">
                 <p>Sentences parsed: {sentences.current.length}</p>
                 <p>Current sentence: {currentSentenceIndex}/{sentences.current.length}</p>
+                {currentQuestion && (
+                  <p className="text-orange-600 font-semibold">⏸️ Story paused for question</p>
+                )}
               </div>
             </div>
 
@@ -397,7 +431,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
             <div className="flex justify-center gap-6">
               <Button
                 onClick={restartStory}
-                disabled={isWaitingForResponse}
+                disabled={isWaitingForResponse || isRecording}
                 className="bg-kidOrange hover:bg-orange-400 text-white font-fredoka text-xl py-6 px-8 rounded-full shadow-xl transform transition-all duration-300 hover:scale-105 disabled:opacity-50"
               >
                 <RotateCcw className="w-6 h-6" />
@@ -405,7 +439,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
 
               <Button
                 onClick={isPlaying ? pauseStory : playStoryWithInteractions}
-                disabled={isLoading || isWaitingForResponse}
+                disabled={isLoading || (isWaitingForResponse && !isRecording)}
                 className="bg-gradient-to-r from-kidGreen to-kidBlue hover:from-green-400 hover:to-blue-400 text-white font-fredoka text-2xl py-8 px-12 rounded-full shadow-2xl transform transition-all duration-300 hover:scale-110 disabled:opacity-50"
               >
                 {isPlaying ? (
@@ -421,6 +455,15 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
                 )}
               </Button>
             </div>
+
+            {/* Status Messages */}
+            {currentQuestion && (
+              <div className="mt-6 text-center">
+                <p className="font-fredoka text-orange-600 bg-orange-100 rounded-lg p-3">
+                  📢 Story is paused. Please answer the question above to continue!
+                </p>
+              </div>
+            )}
 
             {/* Microphone Status */}
             {!microphoneStream && (
