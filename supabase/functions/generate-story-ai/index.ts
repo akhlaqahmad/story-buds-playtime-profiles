@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const huggingFaceApiKey = Deno.env.get('HUGGINGFACE_API_KEY');
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,131 +22,40 @@ serve(async (req) => {
       throw new Error('Prompt is required');
     }
 
-    console.log('Generating story with Hugging Face for prompt:', prompt.substring(0, 100) + '...');
-
-    // Use a reliable, free model that's known to work well for text generation
-    const modelEndpoint = 'https://api-inference.huggingface.co/models/facebook/opt-350m';
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    // Add API key if available
-    if (huggingFaceApiKey) {
-      headers['Authorization'] = `Bearer ${huggingFaceApiKey}`;
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
     }
 
-    // Create a simple, direct prompt for story generation
-    const storyPrompt = `Write a children's story: ${prompt}`;
+    console.log('Generating story with OpenAI for prompt:', prompt.substring(0, 100) + '...');
 
-    const response = await fetch(modelEndpoint, {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
-      headers,
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        inputs: storyPrompt,
-        parameters: {
-          max_new_tokens: 400,
-          temperature: 0.7,
-          do_sample: true,
-          return_full_text: false,
-          repetition_penalty: 1.2
-        },
-        options: {
-          wait_for_model: true,
-          use_cache: false
-        }
+        model: 'gpt-4o-mini',
+        messages: [
+          { 
+            role: 'system', 
+            content: 'You are a creative children\'s story writer who creates engaging, age-appropriate stories. Always follow the format requested and keep stories positive and educational. Create unique, original stories each time - never repeat the same story. Be creative and imaginative while keeping content appropriate for young children.' 
+          },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 1000,
+        temperature: 0.9, // Higher creativity for unique story generation
       }),
     });
 
-    console.log('Hugging Face API response status:', response.status);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Hugging Face API error:', errorText);
-      
-      if (response.status === 503) {
-        // Try an even simpler model as fallback
-        const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/distilgpt2', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            inputs: `Once upon a time, there was a ${prompt.substring(0, 50)}`,
-            parameters: {
-              max_new_tokens: 300,
-              temperature: 0.8,
-              do_sample: true,
-              return_full_text: false
-            },
-            options: {
-              wait_for_model: true
-            }
-          }),
-        });
-
-        if (!fallbackResponse.ok) {
-          throw new Error('Models are temporarily unavailable. Please try again in a few minutes.');
-        }
-
-        const fallbackData = await fallbackResponse.json();
-        let generatedText = '';
-        
-        if (Array.isArray(fallbackData) && fallbackData.length > 0) {
-          generatedText = fallbackData[0].generated_text || '';
-        } else if (fallbackData.generated_text) {
-          generatedText = fallbackData.generated_text;
-        }
-
-        // Clean up the generated text
-        if (generatedText) {
-          // Remove the input prompt from the output if it's included
-          const inputStart = generatedText.indexOf('Once upon a time, there was a');
-          if (inputStart !== -1) {
-            generatedText = generatedText.substring(inputStart);
-          }
-        }
-
-        if (!generatedText || generatedText.trim().length < 50) {
-          throw new Error('Generated story is too short. Please try again.');
-        }
-
-        console.log('Generated story successfully with fallback model, length:', generatedText.length);
-
-        return new Response(JSON.stringify({ generatedText }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      throw new Error(`Hugging Face API error: ${errorText || 'Unknown error'}`);
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
-    console.log('Hugging Face API response:', JSON.stringify(data).substring(0, 200));
-    
-    // Handle different response formats
-    let generatedText = '';
-    if (Array.isArray(data) && data.length > 0) {
-      generatedText = data[0].generated_text || '';
-    } else if (data.generated_text) {
-      generatedText = data.generated_text;
-    } else {
-      throw new Error('Unexpected response format from Hugging Face API');
-    }
-
-    // Clean up the generated text
-    if (generatedText) {
-      // Remove the input prompt from the output if it's included
-      const inputStart = generatedText.indexOf('Write a children\'s story:');
-      if (inputStart !== -1) {
-        const afterPrompt = generatedText.substring(inputStart + 'Write a children\'s story:'.length).trim();
-        if (afterPrompt.length > 0) {
-          generatedText = afterPrompt;
-        }
-      }
-    }
-
-    if (!generatedText || generatedText.trim().length < 50) {
-      throw new Error('Generated story is too short or empty. Please try again.');
-    }
+    const generatedText = data.choices[0].message.content;
 
     console.log('Generated story successfully, length:', generatedText.length);
 
