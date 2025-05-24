@@ -1,6 +1,6 @@
-
 import { Button } from "@/components/ui/button";
-import { Sparkles, Heart, Star } from "lucide-react";
+import { Sparkles, Heart, Star, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface HomePageProps {
   onStartQuestionnaire: () => void;
@@ -13,7 +13,7 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Star className="absolute top-20 left-10 text-kidYellow w-8 h-8 animate-pulse-fun" />
         <Heart className="absolute top-32 right-20 text-kidPink w-6 h-6 animate-bounce-gentle" />
-        <Sparkles className="absolute bottom-40 left-20 text-kidYellow w-10 h-10 animate-wiggle" />
+        <Sparkles className="absolute bottom-40 left-20 text-kidYellow w-10 h-10 animate-pulse-fun" />
         <Star className="absolute bottom-20 right-32 text-white w-7 h-7 animate-pulse-fun" />
       </div>
 
@@ -44,6 +44,17 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
           Let's Make Magic!
           <Sparkles className="ml-4 w-8 h-8" />
         </Button>
+
+        {/* Parental Dashboard Button */}
+        <Link to="/parental-dashboard">
+          <Button
+            variant="ghost"
+            className="text-white hover:bg-white/20 font-fredoka text-xl py-4 px-8 rounded-full transition-all duration-300 hover:scale-105"
+          >
+            <Shield className="mr-2 w-6 h-6" />
+            Parental Dashboard
+          </Button>
+        </Link>
 
         {/* Feature highlights */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl">
