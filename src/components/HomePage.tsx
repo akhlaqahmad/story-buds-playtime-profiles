@@ -21,7 +21,7 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
       <div className="relative z-10 container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-screen text-center">
         {/* Logo/Title */}
         <div className="mb-8 animate-bounce-gentle flex flex-col items-center">
-          <img src="/images/storytime-logo.png" alt="StoryTime Logo" className="w-32 h-32 mb-4 drop-shadow-xl rounded-full bg-white/80 p-2" />
+          <img src="/images/storytime-logo.png" alt="StoryTime Logo" className="w-32 h-32 mb-4 drop-shadow-xl rounded-full bg-white/80 p-2 object-contain aspect-square" />
           <h1 className="font-bubblegum text-6xl md:text-8xl font-bold text-white drop-shadow-lg mb-4">
             StoryTime
           </h1>
