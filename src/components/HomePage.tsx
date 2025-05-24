@@ -20,7 +20,8 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
       {/* Main content */}
       <div className="relative z-10 container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-screen text-center">
         {/* Logo/Title */}
-        <div className="mb-8 animate-bounce-gentle">
+        <div className="mb-8 animate-bounce-gentle flex flex-col items-center">
+          <img src="/images/storytime-logo.png" alt="StoryTime Logo" className="w-32 h-32 mb-4 drop-shadow-xl rounded-full bg-white/80 p-2" />
           <h1 className="font-bubblegum text-6xl md:text-8xl font-bold text-white drop-shadow-lg mb-4">
             StoryTime
           </h1>
@@ -53,6 +54,16 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
           >
             <Shield className="mr-2 w-6 h-6" />
             Parental Dashboard
+          </Button>
+        </Link>
+
+        {/* Team Members Button */}
+        <Link to="/team">
+          <Button
+            variant="ghost"
+            className="text-white hover:bg-white/20 font-fredoka text-xl py-4 px-8 rounded-full transition-all duration-300 hover:scale-105 mt-2"
+          >
+            👨‍💻 Meet the Team
           </Button>
         </Link>
 

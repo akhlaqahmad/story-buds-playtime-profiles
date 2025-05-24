@@ -68,23 +68,37 @@ STORY: [Complete Story]`;
       // Parse the AI response
       const response = data.generatedText;
       console.log('AI generated response length:', response.length);
-      
+
+      // Try to extract title and story
+      let title = '';
+      let content = '';
+
+      // Try to match the expected format
       const titleMatch = response.match(/TITLE:\s*(.*?)(?:\n|STORY:)/i);
       const storyMatch = response.match(/STORY:\s*([\s\S]*)/i);
 
-      const title = titleMatch ? titleMatch[1].trim() : `The ${personality.charAt(0).toUpperCase() + personality.slice(1)} Adventure`;
-      let content = storyMatch ? storyMatch[1].trim() : response.replace(/^TITLE:\s*.*?\n/i, '').trim();
-      
-      // Ensure we have valid content
-      if (!content || content.length < 100) {
-        console.warn('Story parsing failed, using full AI response as content. Full response:', response);
-        content = response.trim(); // Use full response if parsing fails
+      if (titleMatch && storyMatch) {
+        title = titleMatch[1].trim();
+        content = storyMatch[1].trim();
+      } else {
+        // Fallback: Use the first line as title, rest as content
+        const lines = response.split('\n');
+        title = lines[0].replace(/^TITLE:\s*/i, '').trim();
+        content = lines.slice(1).join('\n').replace(/^STORY:\s*/i, '').trim();
+        // If still too short, use the whole response as content
+        if (!content || content.length < 50) {
+          content = response.trim();
+        }
       }
 
-      // Clean up content
-      content = content.replace(/^STORY:\s*/i, '').trim();
-      
-      if (!content || content.length < 100) {
+      // Final fallback: If content is still too short, log and show the full response
+      if (!content || content.length < 50) {
+        console.warn('Story parsing failed, using full AI response as content. Full response:', response);
+        content = response.trim();
+      }
+
+      // If still too short, show a user-friendly error but include the full response for debugging
+      if (!content || content.length < 50) {
         throw new Error('Generated story is too short. Please try again. Full AI response: ' + response);
       }
 

@@ -48,11 +48,15 @@ STORY REQUIREMENTS:
 - Create a clear beginning, middle, and end
 - End with a positive message
 - Make it complete and satisfying
+- Do NOT use asterisks (**), markdown, or any special formatting. Only use plain text for the story output.
 
 FORMATTING:
 - Write in flowing paragraphs
 - Keep language simple but engaging
-- Include character emotions and growth` 
+- Include character emotions and growth
+- Always format your response as:
+TITLE: [Story Title]
+STORY: [Complete Story]` 
           },
           { role: 'user', content: prompt }
         ],
