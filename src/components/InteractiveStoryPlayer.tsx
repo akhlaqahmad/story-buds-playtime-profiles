@@ -25,6 +25,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   
   const storyStartTime = useRef<number>(0)
   const sentences = useRef<string[]>([])
+  const playbackController = useRef<{ shouldStop: boolean }>({ shouldStop: false })
 
   useEffect(() => {
     loadStory()
@@ -86,24 +87,26 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
       return
     }
     
-    console.log('Starting story playback from sentence:', currentSentenceIndex)
+    console.log('🎬 Starting story playback from sentence:', currentSentenceIndex)
     setIsPlaying(true)
+    playbackController.current.shouldStop = false
     storyStartTime.current = Date.now()
     
     try {
       for (let i = currentSentenceIndex; i < sentences.current.length; i++) {
-        if (!isPlaying) {
-          console.log('Playback stopped by user')
+        // Check if we should stop playback
+        if (playbackController.current.shouldStop) {
+          console.log('⏹️ Playback stopped by user')
           break
         }
         
         const sentence = sentences.current[i]
         if (!sentence || sentence.trim().length === 0) {
-          console.log('Skipping empty sentence at index:', i)
+          console.log('⏭️ Skipping empty sentence at index:', i)
           continue
         }
         
-        console.log('Playing sentence:', i, sentence)
+        console.log(`🎵 Playing sentence ${i + 1}/${sentences.current.length}:`, sentence)
         
         // Check if we should ask a question at this point
         const elapsedTime = (Date.now() - storyStartTime.current) / 1000
@@ -111,34 +114,40 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
           q.timestamp <= elapsedTime && !currentQuestion
         )
         
-        if (pendingQuestion) {
-          console.log('Asking question:', pendingQuestion)
+        if (pendingQuestion && !playbackController.current.shouldStop) {
+          console.log('❓ Asking question:', pendingQuestion)
           await askQuestion(pendingQuestion)
-          if (!isPlaying) break // User might have stopped during question
+          if (playbackController.current.shouldStop) break // User might have stopped during question
         }
         
         // Speak the sentence
-        try {
-          await GoogleAudioService.playTextToSpeech(sentence)
-          console.log('Finished playing sentence:', i)
-        } catch (error) {
-          console.error('Error playing sentence:', error)
-          // Continue with next sentence even if one fails
+        if (!playbackController.current.shouldStop) {
+          try {
+            await GoogleAudioService.playTextToSpeech(sentence)
+            console.log(`✅ Finished playing sentence ${i + 1}`)
+          } catch (error) {
+            console.error(`❌ Error playing sentence ${i + 1}:`, error)
+            // Continue with next sentence even if one fails
+          }
         }
         
-        // Update progress
-        setCurrentSentenceIndex(i + 1)
-        setCurrentPosition((i + 1) / sentences.current.length * 100)
-        
-        // Small pause between sentences
-        await new Promise(resolve => setTimeout(resolve, 800))
+        // Update progress only if we're still playing
+        if (!playbackController.current.shouldStop) {
+          setCurrentSentenceIndex(i + 1)
+          setCurrentPosition((i + 1) / sentences.current.length * 100)
+          
+          // Small pause between sentences
+          await new Promise(resolve => setTimeout(resolve, 800))
+        }
       }
       
-      console.log('Story playback completed')
+      console.log('🎬 Story playback completed')
       setIsPlaying(false)
-      setCurrentPosition(100)
+      if (!playbackController.current.shouldStop) {
+        setCurrentPosition(100)
+      }
     } catch (error) {
-      console.error('Error playing story:', error)
+      console.error('❌ Error during story playback:', error)
       setIsPlaying(false)
     }
   }
@@ -240,7 +249,8 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   }
 
   const pauseStory = () => {
-    console.log('Pausing story')
+    console.log('⏸️ Pausing story')
+    playbackController.current.shouldStop = true
     setIsPlaying(false)
     GoogleAudioService.stopAllAudio()
     setCurrentQuestion(null)
@@ -252,7 +262,8 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   }
 
   const restartStory = () => {
-    console.log('Restarting story')
+    console.log('🔄 Restarting story')
+    playbackController.current.shouldStop = true
     setIsPlaying(false)
     setCurrentPosition(0)
     setCurrentSentenceIndex(0)
