@@ -22,49 +22,94 @@ serve(async (req) => {
       throw new Error('Prompt is required');
     }
 
-    console.log('Generating story with Hugging Face Mistral-7B for prompt:', prompt.substring(0, 100) + '...');
+    console.log('Generating story with Hugging Face for prompt:', prompt.substring(0, 100) + '...');
 
-    // Format prompt for Mistral-7B
-    const mistralPrompt = `<s>[INST] You are a creative children's story writer who creates engaging, age-appropriate stories. Always follow the format requested and keep stories positive and educational. Create unique, original stories each time - never repeat the same story. Be creative and imaginative while keeping content appropriate for young children.
-
-${prompt} [/INST]`;
+    // Try a more reliable model that's known to work well
+    const modelEndpoint = 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
-    // Add API key if available (optional for free tier)
+    // Add API key if available
     if (huggingFaceApiKey) {
       headers['Authorization'] = `Bearer ${huggingFaceApiKey}`;
     }
 
-    const response = await fetch('https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1', {
+    // Format the prompt for story generation
+    const storyPrompt = `Create a children's story: ${prompt}`;
+
+    const response = await fetch(modelEndpoint, {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        inputs: mistralPrompt,
+        inputs: storyPrompt,
         parameters: {
-          max_new_tokens: 800,
-          temperature: 0.9,
-          top_p: 0.95,
+          max_new_tokens: 500,
+          temperature: 0.8,
           do_sample: true,
           return_full_text: false
         },
+        options: {
+          wait_for_model: true
+        }
       }),
     });
 
+    console.log('Hugging Face API response status:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Hugging Face API error:', errorData);
+      const errorText = await response.text();
+      console.error('Hugging Face API error:', errorText);
       
       if (response.status === 503) {
-        throw new Error('Hugging Face model is currently loading. Please try again in a few moments.');
+        // Model is loading, try a different approach with a text generation model
+        const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/gpt2', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            inputs: `Once upon a time, ${prompt.substring(0, 100)}`,
+            parameters: {
+              max_new_tokens: 300,
+              temperature: 0.9,
+              do_sample: true,
+              return_full_text: true
+            },
+            options: {
+              wait_for_model: true
+            }
+          }),
+        });
+
+        if (!fallbackResponse.ok) {
+          throw new Error('Both primary and fallback models are unavailable. Please try again in a few minutes.');
+        }
+
+        const fallbackData = await fallbackResponse.json();
+        let generatedText = '';
+        
+        if (Array.isArray(fallbackData) && fallbackData.length > 0) {
+          generatedText = fallbackData[0].generated_text || '';
+        } else if (fallbackData.generated_text) {
+          generatedText = fallbackData.generated_text;
+        }
+
+        if (!generatedText || generatedText.trim().length < 50) {
+          throw new Error('Generated story is too short. Please try again.');
+        }
+
+        console.log('Generated story successfully with fallback model, length:', generatedText.length);
+
+        return new Response(JSON.stringify({ generatedText }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
       
-      throw new Error(`Hugging Face API error: ${errorData || 'Unknown error'}`);
+      throw new Error(`Hugging Face API error: ${errorText || 'Unknown error'}`);
     }
 
     const data = await response.json();
+    console.log('Hugging Face API response:', JSON.stringify(data).substring(0, 200));
     
     // Handle different response formats
     let generatedText = '';
@@ -80,7 +125,7 @@ ${prompt} [/INST]`;
       throw new Error('Generated story is too short or empty. Please try again.');
     }
 
-    console.log('Generated story successfully with Mistral-7B, length:', generatedText.length);
+    console.log('Generated story successfully, length:', generatedText.length);
 
     return new Response(JSON.stringify({ generatedText }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
