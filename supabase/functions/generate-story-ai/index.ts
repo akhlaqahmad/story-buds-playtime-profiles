@@ -22,6 +22,10 @@ serve(async (req) => {
       throw new Error('Prompt is required');
     }
 
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
     console.log('Generating story with OpenAI for prompt:', prompt.substring(0, 100) + '...');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -35,12 +39,12 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are a creative children\'s story writer who creates engaging, age-appropriate stories. Always follow the format requested and keep stories positive and educational.' 
+            content: 'You are a creative children\'s story writer who creates engaging, age-appropriate stories. Always follow the format requested and keep stories positive and educational. Create unique, original stories each time - never repeat the same story. Be creative and imaginative while keeping content appropriate for young children.' 
           },
           { role: 'user', content: prompt }
         ],
         max_tokens: 1000,
-        temperature: 0.8, // Higher creativity for story generation
+        temperature: 0.9, // Higher creativity for unique story generation
       }),
     });
 
@@ -53,7 +57,7 @@ serve(async (req) => {
     const data = await response.json();
     const generatedText = data.choices[0].message.content;
 
-    console.log('Generated story successfully');
+    console.log('Generated story successfully, length:', generatedText.length);
 
     return new Response(JSON.stringify({ generatedText }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -30,13 +30,14 @@ Category: ${category || 'adventure'}
 
 Requirements:
 - Age-appropriate language for a ${age}-year-old
-- Story should be engaging and ${personality}
+- Story should be engaging and match their ${personality} personality
 - Include elements related to their interests: ${interests.join(', ')}
 ${dislikes ? `- Avoid mentioning: ${dislikes}` : ''}
-- Keep the story between 150-200 words for a 3-minute reading time
+- Keep the story between 150-300 words for a 3-5 minute reading time
 - Include dialogue to make it interactive
 - End with a positive, educational message
 - Use simple sentences and vocabulary appropriate for the age group
+- Make the story unique and creative each time
 
 Please provide:
 1. A creative title
@@ -47,27 +48,40 @@ TITLE: [Story Title]
 STORY: [Story Content]`;
 
     try {
+      console.log('Calling AI story generation with prompt:', prompt.substring(0, 200) + '...');
+      
       const { data, error } = await supabase.functions.invoke('generate-story-ai', {
         body: { prompt }
       });
 
       if (error) {
         console.error('AI story generation error:', error);
-        // Fallback to template if AI fails
-        return this.generateFallbackStory(request);
+        throw new Error(`AI generation failed: ${error.message}`);
+      }
+
+      if (!data || !data.generatedText) {
+        console.error('No generated text received from AI');
+        throw new Error('No story content generated');
       }
 
       // Parse the AI response
       const response = data.generatedText;
-      const titleMatch = response.match(/TITLE:\s*(.*?)(?:\n|STORY:)/);
-      const storyMatch = response.match(/STORY:\s*([\s\S]*)/);
+      console.log('AI generated response:', response.substring(0, 200) + '...');
+      
+      const titleMatch = response.match(/TITLE:\s*(.*?)(?:\n|STORY:)/i);
+      const storyMatch = response.match(/STORY:\s*([\s\S]*)/i);
 
       const title = titleMatch ? titleMatch[1].trim() : `The ${personality.charAt(0).toUpperCase() + personality.slice(1)} Adventure`;
-      const content = storyMatch ? storyMatch[1].trim() : response;
+      let content = storyMatch ? storyMatch[1].trim() : response;
+      
+      // Clean up the content - remove any trailing formatting
+      content = content.replace(/^STORY:\s*/i, '').trim();
 
       // Estimate duration based on word count (average reading speed for children's stories)
       const wordCount = content.split(/\s+/).length;
-      const duration = Math.max(120, Math.min(240, wordCount * 0.8)); // 0.8 seconds per word
+      const duration = Math.max(120, Math.min(300, wordCount * 0.8)); // 0.8 seconds per word
+
+      console.log('Successfully generated AI story:', { title, wordCount, duration });
 
       return {
         title,
@@ -78,6 +92,7 @@ STORY: [Story Content]`;
     } catch (error) {
       console.error('Error calling AI story generation:', error);
       // Fallback to template if AI service is unavailable
+      console.log('Falling back to template-based generation');
       return this.generateFallbackStory(request);
     }
   }
