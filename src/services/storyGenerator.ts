@@ -17,8 +17,73 @@ export interface GeneratedStory {
 }
 
 export class StoryGenerator {
-  private static generateStoryContent(request: StoryRequest): GeneratedStory {
-    // Demo story generation - in production this would use AI
+  private static async generateStoryWithAI(request: StoryRequest): Promise<GeneratedStory> {
+    const { age, personality, interests, dislikes, category } = request;
+    
+    // Create a detailed prompt for the AI
+    const prompt = `Create a children's story for a ${age}-year-old child with the following characteristics:
+    
+Personality: ${personality}
+Interests: ${interests.join(', ')}
+${dislikes ? `Dislikes: ${dislikes}` : ''}
+Category: ${category || 'adventure'}
+
+Requirements:
+- Age-appropriate language for a ${age}-year-old
+- Story should be engaging and ${personality}
+- Include elements related to their interests: ${interests.join(', ')}
+${dislikes ? `- Avoid mentioning: ${dislikes}` : ''}
+- Keep the story between 150-200 words for a 3-minute reading time
+- Include dialogue to make it interactive
+- End with a positive, educational message
+- Use simple sentences and vocabulary appropriate for the age group
+
+Please provide:
+1. A creative title
+2. The complete story content
+
+Format your response as:
+TITLE: [Story Title]
+STORY: [Story Content]`;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-story-ai', {
+        body: { prompt }
+      });
+
+      if (error) {
+        console.error('AI story generation error:', error);
+        // Fallback to template if AI fails
+        return this.generateFallbackStory(request);
+      }
+
+      // Parse the AI response
+      const response = data.generatedText;
+      const titleMatch = response.match(/TITLE:\s*(.*?)(?:\n|STORY:)/);
+      const storyMatch = response.match(/STORY:\s*([\s\S]*)/);
+
+      const title = titleMatch ? titleMatch[1].trim() : `The ${personality.charAt(0).toUpperCase() + personality.slice(1)} Adventure`;
+      const content = storyMatch ? storyMatch[1].trim() : response;
+
+      // Estimate duration based on word count (average reading speed for children's stories)
+      const wordCount = content.split(/\s+/).length;
+      const duration = Math.max(120, Math.min(240, wordCount * 0.8)); // 0.8 seconds per word
+
+      return {
+        title,
+        content,
+        category: category || 'adventure',
+        duration: Math.round(duration)
+      };
+    } catch (error) {
+      console.error('Error calling AI story generation:', error);
+      // Fallback to template if AI service is unavailable
+      return this.generateFallbackStory(request);
+    }
+  }
+
+  private static generateFallbackStory(request: StoryRequest): GeneratedStory {
+    // Fallback to original template-based generation
     const { age, personality, interests, dislikes } = request;
     
     const mainInterest = interests[0] || 'animals';
@@ -41,7 +106,7 @@ As the sun began to set, Alex knew it was time to go home. "Come back soon!" cal
 And from that day on, Alex knew that kindness and ${personalityTrait}ness could make any adventure magical.
 
 The End! 🌟`,
-        duration: 180 // 3 minutes
+        duration: 180
       },
       space: {
         title: `The ${personalityTrait.charAt(0).toUpperCase() + personalityTrait.slice(1)} Space Explorer`,
@@ -93,7 +158,7 @@ The End! 🚀✨`,
 
       if (!profile) throw new Error('Profile not found');
 
-      // Generate story content
+      // Generate story content using AI
       const storyRequest: StoryRequest = {
         age: profile.age,
         personality: profile.personality,
@@ -102,7 +167,9 @@ The End! 🚀✨`,
         category: category as any || 'adventure'
       };
 
-      const generatedStory = this.generateStoryContent(storyRequest);
+      console.log('Generating AI story with request:', storyRequest);
+      const generatedStory = await this.generateStoryWithAI(storyRequest);
+      console.log('Generated story:', generatedStory);
 
       // Save story to database (skip for demo profile)
       if (profileId !== 'demo-profile') {
