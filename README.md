@@ -1,4 +1,4 @@
-# Story Buds Playtime Profiles - Build Club Hackathon Project
+# Story Time - Build Club Hackathon Project
 
 ## Project Overview
 StoryTime Playtime Profiles is a collaborative project developed during the Build Club hackathon. This application helps create and manage playtime profiles for children, making it easier to track and organize their activities and preferences.
