@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Play, Pause, RotateCcw, Mic, MicOff } from "lucide-react"
@@ -50,8 +49,16 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
       const storyQuestions = InteractiveStoryService.getQuestionsForStory(storyData)
       setQuestions(storyQuestions)
       
-      // Split story into sentences
-      sentences.current = storyData.content.split(/[.!?]+/).filter(s => s.trim())
+      // Split story into sentences - improved parsing
+      const content = storyData.content || ''
+      const splitSentences = content
+        .split(/[.!?]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+        .map(s => s + '.')
+      
+      sentences.current = splitSentences
+      console.log('Parsed sentences:', sentences.current.length, sentences.current)
     } catch (error) {
       console.error('Error loading story:', error)
     } finally {
@@ -69,17 +76,34 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   }
 
   const playStoryWithInteractions = async () => {
-    if (!story || !microphoneStream) return
+    if (!story) {
+      console.error('No story loaded')
+      return
+    }
     
+    if (sentences.current.length === 0) {
+      console.error('No sentences to play')
+      return
+    }
+    
+    console.log('Starting story playback from sentence:', currentSentenceIndex)
     setIsPlaying(true)
     storyStartTime.current = Date.now()
     
     try {
       for (let i = currentSentenceIndex; i < sentences.current.length; i++) {
-        if (!isPlaying) break
+        if (!isPlaying) {
+          console.log('Playback stopped by user')
+          break
+        }
         
-        const sentence = sentences.current[i].trim()
-        if (!sentence) continue
+        const sentence = sentences.current[i]
+        if (!sentence || sentence.trim().length === 0) {
+          console.log('Skipping empty sentence at index:', i)
+          continue
+        }
+        
+        console.log('Playing sentence:', i, sentence)
         
         // Check if we should ask a question at this point
         const elapsedTime = (Date.now() - storyStartTime.current) / 1000
@@ -88,12 +112,19 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
         )
         
         if (pendingQuestion) {
+          console.log('Asking question:', pendingQuestion)
           await askQuestion(pendingQuestion)
           if (!isPlaying) break // User might have stopped during question
         }
         
         // Speak the sentence
-        await GoogleAudioService.playTextToSpeech(sentence + '.')
+        try {
+          await GoogleAudioService.playTextToSpeech(sentence)
+          console.log('Finished playing sentence:', i)
+        } catch (error) {
+          console.error('Error playing sentence:', error)
+          // Continue with next sentence even if one fails
+        }
         
         // Update progress
         setCurrentSentenceIndex(i + 1)
@@ -103,6 +134,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
         await new Promise(resolve => setTimeout(resolve, 800))
       }
       
+      console.log('Story playback completed')
       setIsPlaying(false)
       setCurrentPosition(100)
     } catch (error) {
@@ -208,6 +240,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   }
 
   const pauseStory = () => {
+    console.log('Pausing story')
     setIsPlaying(false)
     GoogleAudioService.stopAllAudio()
     setCurrentQuestion(null)
@@ -219,6 +252,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   }
 
   const restartStory = () => {
+    console.log('Restarting story')
     setIsPlaying(false)
     setCurrentPosition(0)
     setCurrentSentenceIndex(0)
@@ -328,6 +362,10 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
               <p className="font-fredoka text-lg text-gray-700 leading-relaxed">
                 {story.content.substring(0, 200)}...
               </p>
+              <div className="mt-4 text-sm text-gray-600">
+                <p>Sentences parsed: {sentences.current.length}</p>
+                <p>Current sentence: {currentSentenceIndex}/{sentences.current.length}</p>
+              </div>
             </div>
 
             {/* Progress Bar */}
