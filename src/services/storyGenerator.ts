@@ -12,6 +12,7 @@ export interface StoryRequest {
 export interface GeneratedStory {
   title: string;
   content: string;
+  ssmlContent: string;
   category: string;
   duration: number;
 }
@@ -20,38 +21,39 @@ export class StoryGenerator {
   private static async generateStoryWithAI(request: StoryRequest): Promise<GeneratedStory> {
     const { age, personality, interests, dislikes, category } = request;
     
-    // Create a detailed prompt for the AI
-    const prompt = `Create a children's story for a ${age}-year-old child with the following characteristics:
-    
-Personality: ${personality}
-Interests: ${interests.join(', ')}
-${dislikes ? `Dislikes: ${dislikes}` : ''}
-Category: ${category || 'adventure'}
+    // Create a streamlined prompt for faster generation
+    const prompt = `Create a children's story for a ${age}-year-old child:
 
-Requirements:
-- Age-appropriate language for a ${age}-year-old
-- Story should be engaging and match their ${personality} personality
-- Include elements related to their interests: ${interests.join(', ')}
-${dislikes ? `- Avoid mentioning: ${dislikes}` : ''}
-- Keep the story between 150-300 words for a 3-5 minute reading time
-- Include dialogue to make it interactive
-- End with a positive, educational message
-- Use simple sentences and vocabulary appropriate for the age group
-- Make the story unique and creative each time
+CHILD PROFILE:
+- Age: ${age} years old
+- Personality: ${personality}
+- Interests: ${interests.join(', ')}
+${dislikes ? `- Avoid: ${dislikes}` : ''}
+- Category: ${category || 'adventure'}
 
-Please provide:
-1. A creative title
-2. The complete story content
+STORY REQUIREMENTS:
+- Length: 200-300 words (quick reading)
+- Include the child's interests: ${interests.join(', ')}
+- Match their ${personality} personality
+- Use age-appropriate vocabulary
+- Include dialogue and action
+- Clear beginning, middle, end
+- Positive lesson or message
 
-Format your response as:
+Format as:
 TITLE: [Story Title]
-STORY: [Story Content]`;
+STORY: [Complete Story]`;
 
     try {
-      console.log('Calling AI story generation with prompt:', prompt.substring(0, 200) + '...');
+      console.log('Calling AI story generation with optimized prompt');
       
       const { data, error } = await supabase.functions.invoke('generate-story-ai', {
-        body: { prompt }
+        body: { prompt },
+        options: {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
       });
 
       if (error) {
@@ -61,95 +63,92 @@ STORY: [Story Content]`;
 
       if (!data || !data.generatedText) {
         console.error('No generated text received from AI');
-        throw new Error('No story content generated');
+        throw new Error('No story content generated. Please try again.');
       }
 
       // Parse the AI response
       const response = data.generatedText;
-      console.log('AI generated response:', response.substring(0, 200) + '...');
+      console.log('AI generated response length:', response.length);
       
       const titleMatch = response.match(/TITLE:\s*(.*?)(?:\n|STORY:)/i);
       const storyMatch = response.match(/STORY:\s*([\s\S]*)/i);
 
       const title = titleMatch ? titleMatch[1].trim() : `The ${personality.charAt(0).toUpperCase() + personality.slice(1)} Adventure`;
-      let content = storyMatch ? storyMatch[1].trim() : response;
+      let content = storyMatch ? storyMatch[1].trim() : response.replace(/^TITLE:\s*.*?\n/i, '').trim();
       
-      // Clean up the content - remove any trailing formatting
+      // Ensure we have valid content
+      if (!content || content.length < 100) {
+        content = response; // Use full response if parsing fails
+      }
+
+      // Clean up content
       content = content.replace(/^STORY:\s*/i, '').trim();
+      
+      if (content.length < 100) {
+        throw new Error('Generated story is too short. Please try again.');
+      }
 
-      // Estimate duration based on word count (average reading speed for children's stories)
+      // Create SSML version
+      const ssmlContent = content;
+
+      // Estimate duration for shorter stories (faster reading)
       const wordCount = content.split(/\s+/).length;
-      const duration = Math.max(120, Math.min(300, wordCount * 0.8)); // 0.8 seconds per word
+      const duration = Math.max(120, Math.min(300, wordCount * 0.6)); // 0.6 seconds per word
 
-      console.log('Successfully generated AI story:', { title, wordCount, duration });
+      console.log('Successfully generated optimized story:', { title, wordCount, duration });
 
       return {
         title,
         content,
+        ssmlContent,
         category: category || 'adventure',
         duration: Math.round(duration)
       };
     } catch (error) {
       console.error('Error calling AI story generation:', error);
-      // Fallback to template if AI service is unavailable
-      console.log('Falling back to template-based generation');
-      return this.generateFallbackStory(request);
-    }
-  }
-
-  private static generateFallbackStory(request: StoryRequest): GeneratedStory {
-    // Fallback to original template-based generation
-    const { age, personality, interests, dislikes } = request;
-    
-    const mainInterest = interests[0] || 'animals';
-    const personalityTrait = personality === 'adventurous' ? 'brave' : 
-                           personality === 'silly' ? 'funny' : 'smart';
-    
-    const storyTemplates = {
-      animals: {
-        title: `The ${personalityTrait.charAt(0).toUpperCase() + personalityTrait.slice(1)} Animal Adventure`,
-        content: `Once upon a time, there was a ${personalityTrait} ${age}-year-old named Alex who loved ${mainInterest}! 
-
-One sunny morning, Alex discovered a magical forest where all the animals could talk! "Hello there!" said a friendly rabbit. "Hop hop!" 
-
-The rabbit showed Alex around the forest, where they met a wise old owl who said "Hoo hoo! Welcome to our magical home!" 
-
-Together, they went on an amazing adventure, helping a lost baby deer find its way back to its family. The deer said "Thank you so much!" with the sweetest little voice.
-
-As the sun began to set, Alex knew it was time to go home. "Come back soon!" called all the animal friends. "We'll have more adventures waiting for you!"
-
-And from that day on, Alex knew that kindness and ${personalityTrait}ness could make any adventure magical.
-
-The End! 🌟`,
-        duration: 180
-      },
-      space: {
-        title: `The ${personalityTrait.charAt(0).toUpperCase() + personalityTrait.slice(1)} Space Explorer`,
-        content: `Zoom! Zoom! Alex the ${personalityTrait} space explorer was flying through the stars in a shiny rocket ship! 
-
-"Beep beep!" went the rocket as it landed on a colorful planet covered in rainbow clouds. 
-
-"Hello, Earth friend!" said a friendly alien with three eyes and a big smile. "Welcome to Planet Giggleopolis!"
-
-Alex and the alien friend explored crystal caves that sparkled like diamonds and found flowers that sang beautiful songs when the wind blew through them.
-
-Together, they built a friendship bridge made of stardust that connected their worlds forever.
-
-When it was time to go home, the alien friend gave Alex a special star that would always remind them of their cosmic adventure.
-
-The End! 🚀✨`,
-        duration: 165
+      
+      // Add retry logic for timeout errors
+      if (error.message.includes('timeout') || error.message.includes('fetch')) {
+        console.log('Retrying story generation due to timeout...');
+        // Simple retry once
+        try {
+          const { data, error: retryError } = await supabase.functions.invoke('generate-story-ai', {
+            body: { prompt },
+            options: {
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }
+          });
+          
+          if (!retryError && data && data.generatedText) {
+            const response = data.generatedText;
+            const titleMatch = response.match(/TITLE:\s*(.*?)(?:\n|STORY:)/i);
+            const storyMatch = response.match(/STORY:\s*([\s\S]*)/i);
+            const title = titleMatch ? titleMatch[1].trim() : `The ${personality.charAt(0).toUpperCase() + personality.slice(1)} Adventure`;
+            let content = storyMatch ? storyMatch[1].trim() : response.replace(/^TITLE:\s*.*?\n/i, '').trim();
+            
+            if (!content || content.length < 100) content = response;
+            content = content.replace(/^STORY:\s*/i, '').trim();
+            
+            const wordCount = content.split(/\s+/).length;
+            const duration = Math.max(120, Math.min(300, wordCount * 0.6));
+            
+            return {
+              title,
+              content,
+              ssmlContent: content,
+              category: category || 'adventure',
+              duration: Math.round(duration)
+            };
+          }
+        } catch (retryError) {
+          console.error('Retry also failed:', retryError);
+        }
       }
-    };
-
-    const template = storyTemplates[mainInterest as keyof typeof storyTemplates] || storyTemplates.animals;
-    
-    return {
-      title: template.title,
-      content: template.content,
-      category: request.category || 'adventure',
-      duration: template.duration
-    };
+      
+      throw new Error(`Story generation failed: ${error.message}. Please try again.`);
+    }
   }
 
   static async generateStory(profileId: string, category?: string): Promise<string | null> {
@@ -173,7 +172,7 @@ The End! 🚀✨`,
 
       if (!profile) throw new Error('Profile not found');
 
-      // Generate story content using AI
+      // Generate story content using AI with optimized settings
       const storyRequest: StoryRequest = {
         age: profile.age,
         personality: profile.personality,
@@ -182,9 +181,9 @@ The End! 🚀✨`,
         category: category as any || 'adventure'
       };
 
-      console.log('Generating AI story with request:', storyRequest);
+      console.log('Generating optimized AI story with request:', storyRequest);
       const generatedStory = await this.generateStoryWithAI(storyRequest);
-      console.log('Generated story:', generatedStory);
+      console.log('Generated optimized story:', generatedStory);
 
       // Save story to database (skip for demo profile)
       if (profileId !== 'demo-profile') {
@@ -214,7 +213,7 @@ The End! 🚀✨`,
       }
     } catch (error) {
       console.error('Error generating story:', error);
-      return null;
+      throw error; // Re-throw so the UI can show the actual error
     }
   }
 

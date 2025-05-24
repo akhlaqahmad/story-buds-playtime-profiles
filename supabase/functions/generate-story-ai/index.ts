@@ -26,7 +26,8 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log('Generating story with OpenAI for prompt:', prompt.substring(0, 100) + '...');
+    const startTime = Date.now();
+    console.log('Starting story generation with OpenAI...');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -39,12 +40,25 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: 'You are a creative children\'s story writer who creates engaging, age-appropriate stories. Always follow the format requested and keep stories positive and educational. Create unique, original stories each time - never repeat the same story. Be creative and imaginative while keeping content appropriate for young children.' 
+            content: `You are a creative children's story writer. Create engaging, age-appropriate stories that are 200-300 words long for quick reading.
+
+STORY REQUIREMENTS:
+- Write stories that are 200-300 words (2-3 minute reading time)
+- Use simple, clear language appropriate for young children
+- Include dialogue and vivid descriptions
+- Create a clear beginning, middle, and end
+- End with a positive message
+- Make it complete and satisfying
+
+FORMATTING:
+- Write in flowing paragraphs
+- Keep language simple but engaging
+- Include character emotions and growth` 
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 1000,
-        temperature: 0.9, // Higher creativity for unique story generation
+        max_tokens: 800,
+        temperature: 0.7,
       }),
     });
 
@@ -57,7 +71,9 @@ serve(async (req) => {
     const data = await response.json();
     const generatedText = data.choices[0].message.content;
 
-    console.log('Generated story successfully, length:', generatedText.length);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`Story generated successfully in ${duration}ms, length: ${generatedText.length} characters`);
 
     return new Response(JSON.stringify({ generatedText }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
