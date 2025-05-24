@@ -24,8 +24,8 @@ serve(async (req) => {
 
     console.log('Generating story with Hugging Face for prompt:', prompt.substring(0, 100) + '...');
 
-    // Try a more reliable model that's known to work well
-    const modelEndpoint = 'https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium';
+    // Use a reliable, free model that's known to work well for text generation
+    const modelEndpoint = 'https://api-inference.huggingface.co/models/facebook/opt-350m';
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -36,8 +36,8 @@ serve(async (req) => {
       headers['Authorization'] = `Bearer ${huggingFaceApiKey}`;
     }
 
-    // Format the prompt for story generation
-    const storyPrompt = `Create a children's story: ${prompt}`;
+    // Create a simple, direct prompt for story generation
+    const storyPrompt = `Write a children's story: ${prompt}`;
 
     const response = await fetch(modelEndpoint, {
       method: 'POST',
@@ -45,13 +45,15 @@ serve(async (req) => {
       body: JSON.stringify({
         inputs: storyPrompt,
         parameters: {
-          max_new_tokens: 500,
-          temperature: 0.8,
+          max_new_tokens: 400,
+          temperature: 0.7,
           do_sample: true,
-          return_full_text: false
+          return_full_text: false,
+          repetition_penalty: 1.2
         },
         options: {
-          wait_for_model: true
+          wait_for_model: true,
+          use_cache: false
         }
       }),
     });
@@ -63,17 +65,17 @@ serve(async (req) => {
       console.error('Hugging Face API error:', errorText);
       
       if (response.status === 503) {
-        // Model is loading, try a different approach with a text generation model
-        const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/gpt2', {
+        // Try an even simpler model as fallback
+        const fallbackResponse = await fetch('https://api-inference.huggingface.co/models/distilgpt2', {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            inputs: `Once upon a time, ${prompt.substring(0, 100)}`,
+            inputs: `Once upon a time, there was a ${prompt.substring(0, 50)}`,
             parameters: {
               max_new_tokens: 300,
-              temperature: 0.9,
+              temperature: 0.8,
               do_sample: true,
-              return_full_text: true
+              return_full_text: false
             },
             options: {
               wait_for_model: true
@@ -82,7 +84,7 @@ serve(async (req) => {
         });
 
         if (!fallbackResponse.ok) {
-          throw new Error('Both primary and fallback models are unavailable. Please try again in a few minutes.');
+          throw new Error('Models are temporarily unavailable. Please try again in a few minutes.');
         }
 
         const fallbackData = await fallbackResponse.json();
@@ -92,6 +94,15 @@ serve(async (req) => {
           generatedText = fallbackData[0].generated_text || '';
         } else if (fallbackData.generated_text) {
           generatedText = fallbackData.generated_text;
+        }
+
+        // Clean up the generated text
+        if (generatedText) {
+          // Remove the input prompt from the output if it's included
+          const inputStart = generatedText.indexOf('Once upon a time, there was a');
+          if (inputStart !== -1) {
+            generatedText = generatedText.substring(inputStart);
+          }
         }
 
         if (!generatedText || generatedText.trim().length < 50) {
@@ -119,6 +130,18 @@ serve(async (req) => {
       generatedText = data.generated_text;
     } else {
       throw new Error('Unexpected response format from Hugging Face API');
+    }
+
+    // Clean up the generated text
+    if (generatedText) {
+      // Remove the input prompt from the output if it's included
+      const inputStart = generatedText.indexOf('Write a children\'s story:');
+      if (inputStart !== -1) {
+        const afterPrompt = generatedText.substring(inputStart + 'Write a children\'s story:'.length).trim();
+        if (afterPrompt.length > 0) {
+          generatedText = afterPrompt;
+        }
+      }
     }
 
     if (!generatedText || generatedText.trim().length < 50) {
