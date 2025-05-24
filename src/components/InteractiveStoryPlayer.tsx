@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Play, Pause, RotateCcw, Mic, MicOff } from "lucide-react"
-import { GoogleAudioService } from '@/services/googleAudioService'
+import { ElevenLabsAudioService } from '@/services/elevenLabsAudioService'
 import { InteractiveStoryService, StoryQuestion, InteractionResponse } from '@/services/interactiveStoryService'
 import { StoryGenerator } from '@/services/storyGenerator'
 
@@ -31,7 +31,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     loadStory()
     initializeMicrophone()
     return () => {
-      GoogleAudioService.stopAllAudio()
+      ElevenLabsAudioService.stopAllAudio()
       if (microphoneStream) {
         microphoneStream.getTracks().forEach(track => track.stop())
       }
@@ -69,7 +69,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
 
   const initializeMicrophone = async () => {
     try {
-      const stream = await GoogleAudioService.initializeMicrophone()
+      const stream = await ElevenLabsAudioService.initializeMicrophone()
       setMicrophoneStream(stream)
     } catch (error) {
       console.error('Microphone initialization failed:', error)
@@ -120,10 +120,10 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
           if (playbackController.current.shouldStop) break // User might have stopped during question
         }
         
-        // Speak the sentence
+        // Speak the sentence using ElevenLabs
         if (!playbackController.current.shouldStop) {
           try {
-            await GoogleAudioService.playTextToSpeech(sentence)
+            await ElevenLabsAudioService.playTextToSpeech(sentence)
             console.log(`✅ Finished playing sentence ${i + 1}`)
           } catch (error) {
             console.error(`❌ Error playing sentence ${i + 1}:`, error)
@@ -157,13 +157,13 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     setIsWaitingForResponse(true)
     
     try {
-      // Play the question
-      await GoogleAudioService.playTextToSpeech(question.question)
+      // Play the question using ElevenLabs
+      await ElevenLabsAudioService.playTextToSpeech(question.question)
       
       // Set timeout for response (10 seconds)
       const timeout = setTimeout(async () => {
         if (isWaitingForResponse) {
-          await GoogleAudioService.playTextToSpeech("Let me ask that again. " + question.question)
+          await ElevenLabsAudioService.playTextToSpeech("Let me ask that again. " + question.question)
           // Give another 10 seconds
           const secondTimeout = setTimeout(() => {
             setIsWaitingForResponse(false)
@@ -185,7 +185,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     if (!microphoneStream || isRecording) return
     
     try {
-      await GoogleAudioService.startRecording(microphoneStream)
+      await ElevenLabsAudioService.startRecording(microphoneStream)
       setIsRecording(true)
     } catch (error) {
       console.error('Error starting recording:', error)
@@ -196,7 +196,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     if (!isRecording) return
     
     try {
-      const transcript = await GoogleAudioService.stopRecording()
+      const transcript = await ElevenLabsAudioService.stopRecording()
       setIsRecording(false)
       
       if (currentQuestion && transcript) {
@@ -241,7 +241,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
       feedback += "I love hearing your thoughts!"
     }
     
-    await GoogleAudioService.playTextToSpeech(feedback)
+    await ElevenLabsAudioService.playTextToSpeech(feedback)
     
     // Continue story
     setCurrentQuestion(null)
@@ -252,7 +252,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     console.log('⏸️ Pausing story')
     playbackController.current.shouldStop = true
     setIsPlaying(false)
-    GoogleAudioService.stopAllAudio()
+    ElevenLabsAudioService.stopAllAudio()
     setCurrentQuestion(null)
     setIsWaitingForResponse(false)
     if (responseTimeout) {
@@ -269,7 +269,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     setCurrentSentenceIndex(0)
     setCurrentQuestion(null)
     setIsWaitingForResponse(false)
-    GoogleAudioService.stopAllAudio()
+    ElevenLabsAudioService.stopAllAudio()
     if (responseTimeout) {
       clearTimeout(responseTimeout)
       setResponseTimeout(null)
