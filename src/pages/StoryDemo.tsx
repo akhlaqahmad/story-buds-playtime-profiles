@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { StoryGenerator } from '@/services/storyGenerator';
-import StoryPlayer from '@/components/StoryPlayer';
+import InteractiveStoryPlayer from '@/components/InteractiveStoryPlayer';
 
 const StoryDemo = () => {
   const [currentStoryId, setCurrentStoryId] = useState<string | null>(null);
@@ -33,7 +32,7 @@ const StoryDemo = () => {
 
   if (currentStoryId) {
     return (
-      <StoryPlayer 
+      <InteractiveStoryPlayer 
         storyId={currentStoryId} 
         onBack={() => setCurrentStoryId(null)}
       />

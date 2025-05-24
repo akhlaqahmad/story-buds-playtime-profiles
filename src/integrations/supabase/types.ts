@@ -42,6 +42,44 @@ export type Database = {
         }
         Relationships: []
       }
+      interactions: {
+        Row: {
+          child_profile_id: string | null
+          correctness: boolean | null
+          created_at: string
+          id: string
+          question: string
+          response: string | null
+          story_id: string
+        }
+        Insert: {
+          child_profile_id?: string | null
+          correctness?: boolean | null
+          created_at?: string
+          id?: string
+          question: string
+          response?: string | null
+          story_id: string
+        }
+        Update: {
+          child_profile_id?: string | null
+          correctness?: boolean | null
+          created_at?: string
+          id?: string
+          question?: string
+          response?: string | null
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_child_profile_id_fkey"
+            columns: ["child_profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stories: {
         Row: {
           audio_url: string | null
