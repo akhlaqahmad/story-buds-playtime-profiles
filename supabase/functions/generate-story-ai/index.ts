@@ -26,7 +26,8 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log('Generating story with OpenAI for prompt:', prompt.substring(0, 100) + '...');
+    const startTime = Date.now();
+    console.log('Starting story generation with OpenAI...');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -39,33 +40,25 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: `You are a creative children's story writer who creates engaging, age-appropriate stories. 
+            content: `You are a creative children's story writer. Create engaging, age-appropriate stories that are 200-300 words long for quick reading.
 
-IMPORTANT STORY STRUCTURE REQUIREMENTS:
-- Create stories that are 400-600 words long for a 5-7 minute reading experience
-- Follow a clear 3-act structure:
-  * BEGINNING (25%): Introduce characters, setting, and initial situation
-  * MIDDLE (50%): Develop the main conflict or adventure with rising action
-  * END (25%): Resolve the conflict with a satisfying conclusion and lesson
-
-CONTENT REQUIREMENTS:
-- Use age-appropriate language and vocabulary
-- Include dialogue to make it engaging
-- Create vivid descriptions that spark imagination
-- End with a positive, educational message
-- Make each story unique and original
-- Keep content wholesome and appropriate for young children
+STORY REQUIREMENTS:
+- Write stories that are 200-300 words (2-3 minute reading time)
+- Use simple, clear language appropriate for young children
+- Include dialogue and vivid descriptions
+- Create a clear beginning, middle, and end
+- End with a positive message
+- Make it complete and satisfying
 
 FORMATTING:
-- Write in clear, flowing paragraphs
-- Use simple but descriptive language
-- Include emotional moments and character growth
-- Make it feel complete and satisfying` 
+- Write in flowing paragraphs
+- Keep language simple but engaging
+- Include character emotions and growth` 
           },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 1500,
-        temperature: 0.8,
+        max_tokens: 800,
+        temperature: 0.7,
       }),
     });
 
@@ -78,7 +71,9 @@ FORMATTING:
     const data = await response.json();
     const generatedText = data.choices[0].message.content;
 
-    console.log('Generated story successfully, length:', generatedText.length);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`Story generated successfully in ${duration}ms, length: ${generatedText.length} characters`);
 
     return new Response(JSON.stringify({ generatedText }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
