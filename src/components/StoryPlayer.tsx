@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Play, Pause, RotateCcw, Volume2 } from "lucide-react";
@@ -196,7 +195,7 @@ const StoryPlayer = ({ storyId, onBack }: StoryPlayerProps) => {
               <div className="bg-kidBlue/20 rounded-2xl p-4 text-center">
                 <div className="text-2xl mb-2">⏱️</div>
                 <div className="font-fredoka text-gray-700">Duration</div>
-                <div className="font-fredoka font-bold text-gray-800">{Math.floor(story.duration / 60)} min</div>
+                <div className="font-fredoka font-bold text-gray-800">2 min</div>
               </div>
               
               <div className="bg-kidGreen/20 rounded-2xl p-4 text-center">

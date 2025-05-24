@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -40,10 +39,10 @@ serve(async (req) => {
         messages: [
           { 
             role: 'system', 
-            content: `You are a creative children's story writer. Create engaging, age-appropriate stories that are 200-300 words long for quick reading.
+            content: `You are a creative children's story writer. Create engaging, age-appropriate stories that are 200-240 words long for a 2-minute reading time.
 
 STORY REQUIREMENTS:
-- Write stories that are 200-300 words (2-3 minute reading time)
+- Write stories that are 200-240 words (about 2 minutes reading time)
 - Use simple, clear language appropriate for young children
 - Include dialogue and vivid descriptions
 - Create a clear beginning, middle, and end

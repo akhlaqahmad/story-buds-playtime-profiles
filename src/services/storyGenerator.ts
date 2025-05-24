@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export interface StoryRequest {
@@ -78,24 +77,26 @@ STORY: [Complete Story]`;
       
       // Ensure we have valid content
       if (!content || content.length < 100) {
-        content = response; // Use full response if parsing fails
+        console.warn('Story parsing failed, using full AI response as content. Full response:', response);
+        content = response.trim(); // Use full response if parsing fails
       }
 
       // Clean up content
       content = content.replace(/^STORY:\s*/i, '').trim();
       
-      if (content.length < 100) {
-        throw new Error('Generated story is too short. Please try again.');
+      if (!content || content.length < 100) {
+        throw new Error('Generated story is too short. Please try again. Full AI response: ' + response);
       }
 
       // Create SSML version
       const ssmlContent = content;
 
       // Estimate duration for shorter stories (faster reading)
-      const wordCount = content.split(/\s+/).length;
-      const duration = Math.max(120, Math.min(300, wordCount * 0.6)); // 0.6 seconds per word
+      // const wordCount = content.split(/\s+/).length;
+      // const duration = Math.max(120, Math.min(300, wordCount * 0.6)); // 0.6 seconds per word
+      const duration = 120; // Set to 2 minutes
 
-      console.log('Successfully generated optimized story:', { title, wordCount, duration });
+      console.log('Successfully generated optimized story:', { title, wordCount: content.length, duration });
 
       return {
         title,
