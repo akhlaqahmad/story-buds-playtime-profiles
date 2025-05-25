@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 const teamMembers = [
   { name: 'Akhlaq', role: 'Assistant Vice President', img: '/images/team/akhlaq.png' },
   { name: 'Brent', role: 'Product & Engineering Builder', img: '/images/team/brent.png' },
-  { name: 'Lynnette', role: 'Software Engineer', img: 'https://randomuser.me/api/portraits/women/34.jpg' },
+  { name: 'Lynnette', role: 'Software Engineer', img: '/images/team/lynn.jpeg' },
   { name: 'Cliff', role: 'Software Engineer', img: '/images/team/cliff.jpeg' },
   { name: 'Mark', role: 'Head of Growth', img: '/images/team/mark.jpeg' },
 ];
