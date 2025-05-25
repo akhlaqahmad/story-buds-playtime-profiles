@@ -5,7 +5,7 @@ StoryTime Playtime Profiles is a collaborative project developed during the Buil
 
 ## Team Members
 - Akhlaq
-- Brent
+- [Brent](https://github.com/deverman)
 - Lynnette
 - Cliff
 
