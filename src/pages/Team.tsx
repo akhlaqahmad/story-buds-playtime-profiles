@@ -7,9 +7,9 @@ import { ArrowLeft } from 'lucide-react';
 const teamMembers = [
   { name: 'Akhlaq', role: 'Assistant Vice President', img: '/images/team/akhlaq.png' },
   { name: 'Brent', role: 'Product & Engineering Builder', img: '/images/team/brent.png' },
-  { name: 'Lynnette', role: 'Developer', img: 'https://randomuser.me/api/portraits/women/34.jpg' },
-  { name: 'Cliff', role: 'Developer', img: 'https://randomuser.me/api/portraits/men/35.jpg' },
-  { name: 'Mark', role: 'Developer', img: 'https://randomuser.me/api/portraits/men/36.jpg' },
+  { name: 'Lynnette', role: 'Software Engineer', img: 'https://randomuser.me/api/portraits/women/34.jpg' },
+  { name: 'Cliff', role: 'Software Engineer', img: '/images/team/cliff.jpeg' },
+  { name: 'Mark', role: 'Head of Growth', img: '/images/team/mark.jpeg' },
 ];
 
 export default function Team() {
@@ -31,7 +31,7 @@ export default function Team() {
         {teamMembers.map((member) => (
           <Card key={member.name} className="w-72 bg-white/90 shadow-xl hover:scale-105 transition-transform duration-300">
             <CardHeader className="flex flex-col items-center">
-              <Avatar className="h-24 w-24 mb-4">
+              <Avatar className="h-40 w-40 mb-4">
                 <AvatarImage src={member.img} alt={member.name} className="object-cover aspect-square" />
                 <AvatarFallback>{member.name[0]}</AvatarFallback>
               </Avatar>
