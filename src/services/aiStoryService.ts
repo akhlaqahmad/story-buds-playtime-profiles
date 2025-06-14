@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import type { StoryRequest, GeneratedStory } from "@/types/story";
 
@@ -32,10 +33,7 @@ STORY: [Complete Story]`;
       console.log('Calling AI story generation with optimized prompt');
       
       const { data, error } = await supabase.functions.invoke('generate-story-ai', {
-        body: JSON.stringify({ prompt }),
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        body: { prompt }
       });
 
       if (error) {
@@ -116,10 +114,7 @@ STORY: [Complete Story]`;
   private static async retryStoryGeneration(prompt: string, category?: string): Promise<GeneratedStory> {
     try {
       const { data, error: retryError } = await supabase.functions.invoke('generate-story-ai', {
-        body: JSON.stringify({ prompt }),
-        headers: {
-          'Content-Type': 'application/json',
-        }
+        body: { prompt }
       });
       
       if (!retryError && data && data.generatedText) {
