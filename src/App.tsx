@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import ParentalDashboard from "./pages/ParentalDashboard";
 import Team from "./pages/Team";
 import StoryLibrary from "./pages/StoryLibrary";
+import StoryView from "./pages/StoryView";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +27,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/story-demo" element={<StoryDemo />} />
+          <Route path="/story/:storyId" element={<StoryView />} />
           <Route path="/parental-dashboard" element={<ParentalDashboard />} />
           <Route path="/team" element={<Team />} />
           <Route path="/stories" element={<StoryLibrary />} />

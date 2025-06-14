@@ -32,7 +32,7 @@ const StoryCard = ({ story }: StoryCardProps) => {
         </div>
         <p className="font-fredoka text-gray-700 line-clamp-3 mb-2">{story.content}</p>
       </div>
-      <a href={`/story-demo?storyId=${story.id}`}>
+      <a href={`/story/${story.id}`}>
         <Button className="w-full font-fredoka mt-2">Read Story</Button>
       </a>
     </div>
