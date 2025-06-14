@@ -11,9 +11,21 @@ export interface ChildProfile {
 
 export class ProfileService {
   static async getProfile(profileId: string): Promise<ChildProfile | null> {
-    if (profileId === 'demo-profile') {
+    if (profileId === 'demo-profile' || profileId === 'public-demo') {
+      // Return a default profile for demo stories or use saved profile
       const stored = localStorage.getItem('childProfile');
-      return stored ? JSON.parse(stored) : null;
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      
+      // Default public demo profile
+      return {
+        id: profileId,
+        age: 6,
+        personality: 'adventurous',
+        interests: ['animals', 'magic', 'space'],
+        dislikes: ''
+      };
     }
 
     try {
