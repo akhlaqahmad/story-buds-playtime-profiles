@@ -10,7 +10,7 @@ export class StoryDbService {
 
     try {
       const { data: storyData, error: storyError } = await supabase
-        .from('stories' as any)
+        .from('stories')
         .insert({
           child_profile_id: profileId,
           title: generatedStory.title,
@@ -37,7 +37,7 @@ export class StoryDbService {
 
     try {
       const { data, error } = await supabase
-        .from('stories' as any)
+        .from('stories')
         .select('*')
         .eq('id', storyId)
         .single();

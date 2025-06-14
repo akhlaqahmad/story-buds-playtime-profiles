@@ -18,7 +18,7 @@ export class ProfileService {
 
     try {
       const { data, error } = await supabase
-        .from('child_profiles' as any)
+        .from('child_profiles')
         .select('*')
         .eq('id', profileId)
         .single();
