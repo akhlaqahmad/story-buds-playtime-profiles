@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 
 export class ElevenLabsAudioService {
@@ -77,6 +76,45 @@ export class ElevenLabsAudioService {
     } catch (error) {
       console.error('❌ Error in ElevenLabs playTextToSpeech:', error)
       throw error
+    }
+  }
+
+  static async generateFullStoryAudio(fullText: string): Promise<string> {
+    console.log('🎵 Starting ElevenLabs TTS for full story:', fullText.substring(0, 100) + '...');
+
+    try {
+      console.log('📞 Calling ElevenLabs TTS API (full story)...');
+      const { data, error } = await supabase.functions.invoke('elevenlabs-text-to-speech', {
+        body: {
+          text: fullText,
+          voice_id: 'XB0fDUnXU5powFXDhCwa',
+          model_id: 'eleven_turbo_v2_5'
+        }
+      });
+
+      if (error) {
+        console.error('❌ ElevenLabs TTS API Error (full story):', error);
+        throw error;
+      }
+
+      if (!data || !data.audioContent) {
+        throw new Error('No audio content received (full story)');
+      }
+
+      // Convert base64 audio to blob and make object URL
+      const audioBytes = atob(data.audioContent);
+      const audioArray = new Uint8Array(audioBytes.length);
+      for (let i = 0; i < audioBytes.length; i++) {
+        audioArray[i] = audioBytes.charCodeAt(i);
+      }
+
+      const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      return audioUrl;
+    } catch (error) {
+      console.error('❌ Error in ElevenLabs generateFullStoryAudio:', error);
+      throw error;
     }
   }
 

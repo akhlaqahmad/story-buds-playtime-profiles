@@ -1,13 +1,12 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { ElevenLabsAudioService } from '@/services/elevenLabsAudioService'
 import { StoryGenerator } from '@/services/storyGenerator'
-import { useStoryPlayback } from '@/hooks/useStoryPlayback'
 import StoryContent from '@/components/story/StoryContent'
 import StoryControls from '@/components/story/StoryControls'
 import StoryInfo from '@/components/story/StoryInfo'
 import StoryProgressBar from '@/components/story/StoryProgressBar'
+import { useFullStoryPlayback } from "@/hooks/useFullStoryPlayback"
 
 interface InteractiveStoryPlayerProps {
   storyId: string
@@ -19,30 +18,30 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   const [isLoading, setIsLoading] = useState(true)
   
   const {
+    audioLoading,
     isPlaying,
-    currentPosition,
+    audioErrored,
     currentWordIndex,
     words,
-    parseSentencesAndWords,
-    playStoryWithInteractions,
+    generateAndPlayFullStory,
     pauseStory,
     restartStory
-  } = useStoryPlayback()
+  } = useFullStoryPlayback()
 
   useEffect(() => {
     loadStory()
+    // Stop audio on unmount
     return () => {
-      ElevenLabsAudioService.stopAllAudio()
+      restartStory()
     }
+    // eslint-disable-next-line
   }, [storyId])
 
   const loadStory = async () => {
+    setIsLoading(true)
     try {
       const storyData = await StoryGenerator.getStory(storyId)
       setStory(storyData)
-      
-      const content = storyData.content || ''
-      parseSentencesAndWords(content)
     } catch (error) {
       console.error('Error loading story:', error)
     } finally {
@@ -50,18 +49,11 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
     }
   }
 
-  if (isLoading) {
+  // UI for loading whole story audio
+  if (isLoading || !story) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-kidGreen via-kidBlue to-kidPurple flex items-center justify-center">
-        <div className="text-white font-fredoka text-2xl">Loading your magical story... ✨</div>
-      </div>
-    )
-  }
-
-  if (!story) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-kidGreen via-kidBlue to-kidPurple flex items-center justify-center">
-        <div className="text-white font-fredoka text-2xl">Story not found 😔</div>
+        <div className="text-white font-fredoka text-2xl">{isLoading ? "Loading your magical story... ✨" : "Story not found 😔"}</div>
       </div>
     )
   }
@@ -102,13 +94,30 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
               isPlaying={isPlaying}
             />
 
-            <StoryProgressBar currentPosition={currentPosition} />
+            {/* Show a loading spinner during TTS generation */}
+            {audioLoading ? (
+              <div className="flex flex-col items-center text-center mt-4 mb-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-kidBlue mb-4" />
+                <p className="font-fredoka text-lg text-kidBlue font-semibold mb-2">
+                  AI is creating your magical story narration...
+                </p>
+                <p className="font-fredoka text-gray-500 text-sm">This may take 8–20 seconds for the full story audio.</p>
+              </div>
+            ) : null}
+
+            {audioErrored && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <p className="font-fredoka text-sm">{audioErrored}</p>
+              </div>
+            )}
+
+            <StoryProgressBar currentPosition={words.length > 0 ? ((currentWordIndex + 1) / words.length) * 100 : 0} />
 
             <StoryControls
               isPlaying={isPlaying}
-              isLoading={isLoading}
-              currentPosition={currentPosition}
-              onPlay={playStoryWithInteractions}
+              isLoading={audioLoading}
+              currentPosition={words.length > 0 ? ((currentWordIndex + 1) / words.length) * 100 : 0}
+              onPlay={() => generateAndPlayFullStory(story.content)}
               onPause={pauseStory}
               onRestart={restartStory}
             />
