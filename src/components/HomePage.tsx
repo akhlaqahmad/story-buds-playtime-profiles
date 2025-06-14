@@ -45,7 +45,7 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
 
         {/* Main CTA Button */}
         <Button
-          onClick={handleStartClick}
+          onClick={onStartQuestionnaire}
           className="bg-kidYellow hover:bg-yellow-400 text-gray-800 font-fredoka text-2xl md:text-3xl font-bold py-8 px-12 rounded-full shadow-2xl transform transition-all duration-300 hover:scale-110 hover:rotate-1 active:scale-95 mb-8"
         >
           <Sparkles className="mr-4 w-8 h-8" />
