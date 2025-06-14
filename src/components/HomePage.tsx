@@ -28,6 +28,18 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
           </Button>
         </Link>
       </div>
+      {/* Top right "Parental Dashboard" button */}
+      <div className="absolute top-6 right-6 z-20">
+        <Link to="/parental-dashboard">
+          <Button
+            variant="ghost"
+            className="text-white hover:bg-white/20 font-fredoka text-xl py-4 px-8 rounded-full transition-all duration-300 hover:scale-105"
+          >
+            <Shield className="mr-2 w-6 h-6" />
+            Parental Dashboard
+          </Button>
+        </Link>
+      </div>
       {/* Floating decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Star className="absolute top-20 left-10 text-kidYellow w-8 h-8 animate-pulse-fun" />
@@ -74,17 +86,6 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
           Browse story libraries
           <Sparkles className="ml-4 w-8 h-8" />
         </Button>
-
-        {/* Parental Dashboard Button */}
-        <Link to="/parental-dashboard">
-          <Button
-            variant="ghost"
-            className="text-white hover:bg-white/20 font-fredoka text-xl py-4 px-8 rounded-full transition-all duration-300 hover:scale-105"
-          >
-            <Shield className="mr-2 w-6 h-6" />
-            Parental Dashboard
-          </Button>
-        </Link>
 
         {/* Feature highlights */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12 max-w-4xl">
