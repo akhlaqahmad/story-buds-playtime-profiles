@@ -48,10 +48,8 @@ STORY: [Complete Story]`;
       
       const { data, error } = await supabase.functions.invoke('generate-story-ai', {
         body: { prompt },
-        options: {
-          headers: {
-            'Content-Type': 'application/json',
-          }
+        headers: {
+          'Content-Type': 'application/json',
         }
       });
 
@@ -129,10 +127,8 @@ STORY: [Complete Story]`;
         try {
           const { data, error: retryError } = await supabase.functions.invoke('generate-story-ai', {
             body: { prompt },
-            options: {
-              headers: {
-                'Content-Type': 'application/json',
-              }
+            headers: {
+              'Content-Type': 'application/json',
             }
           });
           
