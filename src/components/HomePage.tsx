@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Sparkles, Heart, Star, Shield } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -15,7 +16,18 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-kidBlue via-kidPurple to-kidPink overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-kidBlue via-kidPurple to-kidPink overflow-hidden relative">
+      {/* Top left "Meet the Team" button */}
+      <div className="absolute top-6 left-6 z-20">
+        <Link to="/team">
+          <Button
+            variant="ghost"
+            className="text-white hover:bg-white/20 font-fredoka text-xl py-4 px-8 rounded-full transition-all duration-300 hover:scale-105"
+          >
+            👨‍💻 Meet the Team
+          </Button>
+        </Link>
+      </div>
       {/* Floating decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <Star className="absolute top-20 left-10 text-kidYellow w-8 h-8 animate-pulse-fun" />
@@ -71,16 +83,6 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
           >
             <Shield className="mr-2 w-6 h-6" />
             Parental Dashboard
-          </Button>
-        </Link>
-
-        {/* Team Members Button */}
-        <Link to="/team">
-          <Button
-            variant="ghost"
-            className="text-white hover:bg-white/20 font-fredoka text-xl py-4 px-8 rounded-full transition-all duration-300 hover:scale-105 mt-2"
-          >
-            👨‍💻 Meet the Team
           </Button>
         </Link>
 
