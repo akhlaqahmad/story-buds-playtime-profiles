@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 
@@ -11,13 +12,11 @@ const HomePage = ({ onStartQuestionnaire }: { onStartQuestionnaire: () => void }
         <p className="font-fredoka text-2xl text-white mb-12 drop-shadow-md">
           Magical stories created just for you!
         </p>
-      </div>
-      <div className="flex flex-col md:flex-row gap-4 mt-6 justify-center">
-        <Button onClick={onStartQuestionnaire} className="font-fredoka text-xl py-4 px-7 rounded-full shadow-lg hover-scale">
-          Start Your Story!
+        <Button onClick={onStartQuestionnaire} className="font-fredoka text-xl py-4 px-7 rounded-full shadow-lg hover-scale mb-6">
+          Let's Make Magic!
         </Button>
         <a href="/stories">
-          <Button variant="secondary" className="font-fredoka text-xl py-4 px-7 rounded-full shadow-lg hover-scale">
+          <Button variant="secondary" className="font-fredoka text-xl py-4 px-7 rounded-full shadow-lg hover-scale mt-2">
             Browse Story Library
           </Button>
         </a>
