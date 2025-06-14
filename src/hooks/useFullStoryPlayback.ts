@@ -1,6 +1,7 @@
 
 import { useRef, useState } from "react";
 import { ElevenLabsAudioService } from "@/services/elevenLabsAudioService";
+import { StoryGenerator } from "@/services/storyGenerator";
 
 export const useFullStoryPlayback = () => {
   const [audioLoading, setAudioLoading] = useState(false);
@@ -12,23 +13,23 @@ export const useFullStoryPlayback = () => {
   const audioElement = useRef<HTMLAudioElement | null>(null);
   const highlightInterval = useRef<NodeJS.Timeout | null>(null);
 
-  // Called by component to generate entire story TTS
-  const generateAndPlayFullStory = async (storyContent: string) => {
+  // Modify this API so the component provides { id, content, audio_url }
+  const generateAndPlayFullStory = async (story: { id: string, content: string, audio_url?: string }) => {
     setAudioErrored(null);
     setAudioLoading(true);
     setCurrentWordIndex(0);
     setIsPlaying(false);
 
     // Split story into words for highlighting
-    words.current = storyContent
+    words.current = story.content
       .replace(/[.!?]+/g, " .")
       .split(/\s+/)
       .filter((w) => w.length > 0);
 
     try {
-      // 1. Get TTS for full story (returns a Blob URL)
-      const audioUrl = await ElevenLabsAudioService.generateFullStoryAudio(storyContent);
-      if (!audioUrl) throw new Error("No audio generated!");
+      // 1. Try to get or create the story audio (uses cache if present)
+      const audioUrl = await ElevenLabsAudioService.getOrCreateCachedStoryAudio(story);
+      if (!audioUrl) throw new Error("No audio available!");
 
       // 2. Prepare and play audio
       if (audioElement.current) {
@@ -55,8 +56,7 @@ export const useFullStoryPlayback = () => {
       };
 
       audio.onplay = () => {
-        // Estimate duration per word
-        const duration = audio.duration || Math.max(6, storyContent.length / 20); // fallback estimate for unknown duration
+        const duration = audio.duration || Math.max(6, story.content.length / 20);
         const highlightMs = (duration * 1000) / words.current.length;
         let index = 0;
 
@@ -89,8 +89,6 @@ export const useFullStoryPlayback = () => {
     if (audioElement.current && !isPlaying) {
       audioElement.current.play();
       setIsPlaying(true);
-      // Re-sync highlighting (basic: resume from current time)
-      // For simplicity, we do not re-sync word highlighting after pause/resume
     }
   };
 

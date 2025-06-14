@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import type { GeneratedStory, StoredStory } from "@/types/story";
 
@@ -83,5 +82,16 @@ export class StoryDbService {
     };
     localStorage.setItem('currentStory', JSON.stringify(demoStory));
     return demoStory.id;
+  }
+
+  static async updateStoryAudioUrl(storyId: string, audioUrl: string): Promise<void> {
+    try {
+      await supabase
+        .from('stories')
+        .update({ audio_url: audioUrl })
+        .eq('id', storyId);
+    } catch (error) {
+      console.error('Error updating story audio_url:', error);
+    }
   }
 }

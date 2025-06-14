@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { StoryGenerator } from '@/services/storyGenerator'
@@ -117,7 +116,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
               isPlaying={isPlaying}
               isLoading={audioLoading}
               currentPosition={words.length > 0 ? ((currentWordIndex + 1) / words.length) * 100 : 0}
-              onPlay={() => generateAndPlayFullStory(story.content)}
+              onPlay={() => generateAndPlayFullStory(story)}
               onPause={pauseStory}
               onRestart={restartStory}
             />
