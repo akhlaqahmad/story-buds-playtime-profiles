@@ -27,7 +27,7 @@ const StoryCard = ({ story }: StoryCardProps) => {
             {friendlyCategoryMap[story.category] || story.category}
           </Badge>
           <span className="font-fredoka text-sm text-gray-500">
-            {story.duration ? `${story.duration} min` : ""}
+            {story.duration ? `${story.duration} seconds` : ""}
           </span>
         </div>
         <p className="font-fredoka text-gray-700 line-clamp-3 mb-2">{story.content}</p>
