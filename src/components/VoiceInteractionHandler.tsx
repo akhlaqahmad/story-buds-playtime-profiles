@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import VoiceQuestionModal from './VoiceQuestionModal'
 import { InteractiveStoryService, StoryQuestion, InteractionResponse } from '@/services/interactiveStoryService'
-import { GoogleAudioService } from '@/services/googleAudioService'
+import { ElevenLabsAudioService } from '@/services/elevenLabsAudioService'
 
 interface VoiceInteractionHandlerProps {
   story: any
@@ -118,7 +118,7 @@ const VoiceInteractionHandler = ({
     }
 
     try {
-      await GoogleAudioService.playTextToSpeech(feedbackMessage)
+      await ElevenLabsAudioService.playTextToSpeech(feedbackMessage)
     } catch (error) {
       console.error('Error providing voice feedback:', error)
     }

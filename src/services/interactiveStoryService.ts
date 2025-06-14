@@ -104,18 +104,30 @@ export class InteractiveStoryService {
         return
       }
 
-      // For real stories, save to database
-      const { error } = await supabase
-        .from('interactions')
-        .insert({
-          story_id: interaction.storyId,
-          question: interaction.question,
-          response: interaction.response,
-          correctness: interaction.correctness,
-          child_profile_id: interaction.childProfileId
-        })
+      // For real stories, try to save to database
+      try {
+        const { error } = await supabase
+          .from('interactions' as any)
+          .insert({
+            story_id: interaction.storyId,
+            question: interaction.question,
+            response: interaction.response,
+            correctness: interaction.correctness,
+            child_profile_id: interaction.childProfileId
+          })
 
-      if (error) throw error
+        if (error) throw error
+      } catch (dbError) {
+        console.error('Database save failed, falling back to localStorage:', dbError)
+        // Fallback to localStorage if database save fails
+        const interactions = JSON.parse(localStorage.getItem('storyInteractions') || '[]')
+        interactions.push({
+          ...interaction,
+          id: 'fallback-interaction-' + Date.now(),
+          created_at: new Date().toISOString()
+        })
+        localStorage.setItem('storyInteractions', JSON.stringify(interactions))
+      }
     } catch (error) {
       console.error('Error saving interaction:', error)
     }

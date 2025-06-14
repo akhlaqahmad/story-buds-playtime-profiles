@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ElevenLabsAudioService } from '@/services/elevenLabsAudioService'
 import { GoogleAudioService } from '@/services/googleAudioService'
 
 interface VoiceQuestionModalProps {
@@ -58,7 +59,7 @@ const VoiceQuestionModal = ({
 
   const speakQuestion = async () => {
     try {
-      await GoogleAudioService.playTextToSpeech(question)
+      await ElevenLabsAudioService.playTextToSpeech(question)
     } catch (error) {
       console.error('Error speaking question:', error)
     }

@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Play, Pause, RotateCcw } from "lucide-react"
-import { GoogleAudioService } from '@/services/googleAudioService'
+import { ElevenLabsAudioService } from '@/services/elevenLabsAudioService'
 import { StoryGenerator } from '@/services/storyGenerator'
 import VoiceInteractionHandler from './VoiceInteractionHandler'
 
@@ -29,7 +29,7 @@ const InteractiveStoryPlayerEnhanced = ({ storyId, onBack }: InteractiveStoryPla
   useEffect(() => {
     loadStory()
     return () => {
-      GoogleAudioService.stopAllAudio()
+      ElevenLabsAudioService.stopAllAudio()
       if (timeInterval.current) {
         clearInterval(timeInterval.current)
       }
@@ -164,7 +164,7 @@ const InteractiveStoryPlayerEnhanced = ({ storyId, onBack }: InteractiveStoryPla
     }
     
     // Start playing the audio
-    const audioPromise = GoogleAudioService.playTextToSpeech(sentence)
+    const audioPromise = ElevenLabsAudioService.playTextToSpeech(sentence)
     
     // Highlight words progressively
     const highlightPromise = (async () => {
@@ -185,7 +185,7 @@ const InteractiveStoryPlayerEnhanced = ({ storyId, onBack }: InteractiveStoryPla
     playbackController.current.shouldStop = true
     setIsPlaying(false)
     stopTimeTracking()
-    GoogleAudioService.stopAllAudio()
+    ElevenLabsAudioService.stopAllAudio()
   }
 
   const resumeStory = () => {
@@ -206,7 +206,7 @@ const InteractiveStoryPlayerEnhanced = ({ storyId, onBack }: InteractiveStoryPla
     setCurrentWordIndex(0)
     setCurrentTime(0)
     stopTimeTracking()
-    GoogleAudioService.stopAllAudio()
+    ElevenLabsAudioService.stopAllAudio()
   }
 
   const renderHighlightedText = () => {
@@ -257,7 +257,7 @@ const InteractiveStoryPlayerEnhanced = ({ storyId, onBack }: InteractiveStoryPla
             </Button>
           )}
           <div className="text-white font-fredoka text-lg">
-            AI StoryTime with Voice! 🎤
+            AI StoryTime with ElevenLabs Voice! 🎤
           </div>
         </div>
       </div>
@@ -273,7 +273,7 @@ const InteractiveStoryPlayerEnhanced = ({ storyId, onBack }: InteractiveStoryPla
           <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl">
             {/* Story Content Preview with Highlighting */}
             <div className="bg-gradient-to-r from-kidYellow/20 to-kidPink/20 rounded-2xl p-6 mb-8 max-h-64 overflow-y-auto">
-              <h3 className="font-fredoka text-xl font-bold text-gray-800 mb-4">Your AI Story with Voice Questions:</h3>
+              <h3 className="font-fredoka text-xl font-bold text-gray-800 mb-4">Your AI Story with ElevenLabs Voice:</h3>
               <div className="font-fredoka text-lg text-gray-700 leading-relaxed">
                 {renderHighlightedText()}
               </div>
@@ -336,9 +336,9 @@ const InteractiveStoryPlayerEnhanced = ({ storyId, onBack }: InteractiveStoryPla
               </div>
               
               <div className="bg-kidYellow/20 rounded-2xl p-4 text-center">
-                <div className="text-2xl mb-2">🎤</div>
-                <div className="font-fredoka text-gray-700">Interactive</div>
-                <div className="font-fredoka font-bold text-gray-800">Voice Questions</div>
+                <div className="text-2xl mb-2">🎵</div>
+                <div className="font-fredoka text-gray-700">Voice</div>
+                <div className="font-fredoka font-bold text-gray-800">ElevenLabs</div>
               </div>
             </div>
           </div>
