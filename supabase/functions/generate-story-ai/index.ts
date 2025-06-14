@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -15,7 +16,21 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    // Add better JSON parsing with error handling
+    let requestBody;
+    try {
+      const text = await req.text();
+      console.log('Raw request body:', text);
+      requestBody = JSON.parse(text);
+    } catch (parseError) {
+      console.error('JSON parsing error:', parseError);
+      return new Response(JSON.stringify({ error: 'Invalid JSON in request body' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { prompt } = requestBody;
 
     if (!prompt) {
       throw new Error('Prompt is required');
