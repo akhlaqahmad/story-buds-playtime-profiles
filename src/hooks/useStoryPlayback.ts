@@ -1,6 +1,6 @@
 
 import { useState, useRef } from 'react'
-import { GoogleAudioService } from '@/services/googleAudioService'
+import { ElevenLabsAudioService } from '@/services/elevenLabsAudioService'
 
 export const useStoryPlayback = () => {
   const [isPlaying, setIsPlaying] = useState(false)
@@ -44,7 +44,7 @@ export const useStoryPlayback = () => {
       wordStartIndex += prevWords.length
     }
     
-    const audioPromise = GoogleAudioService.playTextToSpeech(sentence)
+    const audioPromise = ElevenLabsAudioService.playTextToSpeech(sentence)
     
     const highlightPromise = (async () => {
       for (let i = 0; i < sentenceWords.length; i++) {
@@ -115,7 +115,7 @@ export const useStoryPlayback = () => {
     console.log('⏸️ Pausing story')
     playbackController.current.shouldStop = true
     setIsPlaying(false)
-    GoogleAudioService.stopAllAudio()
+    ElevenLabsAudioService.stopAllAudio()
   }
 
   const restartStory = () => {
@@ -125,7 +125,7 @@ export const useStoryPlayback = () => {
     setCurrentPosition(0)
     setCurrentSentenceIndex(0)
     setCurrentWordIndex(0)
-    GoogleAudioService.stopAllAudio()
+    ElevenLabsAudioService.stopAllAudio()
   }
 
   return {

@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
-import { GoogleAudioService } from '@/services/googleAudioService'
+import { ElevenLabsAudioService } from '@/services/elevenLabsAudioService'
 import { StoryGenerator } from '@/services/storyGenerator'
 import { useStoryPlayback } from '@/hooks/useStoryPlayback'
 import StoryContent from '@/components/story/StoryContent'
@@ -32,7 +32,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
   useEffect(() => {
     loadStory()
     return () => {
-      GoogleAudioService.stopAllAudio()
+      ElevenLabsAudioService.stopAllAudio()
     }
   }, [storyId])
 
@@ -81,7 +81,7 @@ const InteractiveStoryPlayer = ({ storyId, onBack }: InteractiveStoryPlayerProps
             </Button>
           )}
           <div className="text-white font-fredoka text-lg">
-            AI StoryTime
+            AI StoryTime with ElevenLabs! 🎤
           </div>
         </div>
       </div>
