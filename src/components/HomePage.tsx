@@ -1,12 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { Sparkles, Heart, Star, Shield } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface HomePageProps {
   onStartQuestionnaire: () => void;
 }
 
 const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
+  const navigate = useNavigate();
+
+  const handleStartClick = () => {
+    onStartQuestionnaire();
+    navigate('/stories');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-kidBlue via-kidPurple to-kidPink overflow-hidden">
       {/* Floating decorative elements */}
@@ -38,11 +45,21 @@ const HomePage = ({ onStartQuestionnaire }: HomePageProps) => {
 
         {/* Main CTA Button */}
         <Button
-          onClick={onStartQuestionnaire}
+          onClick={handleStartClick}
           className="bg-kidYellow hover:bg-yellow-400 text-gray-800 font-fredoka text-2xl md:text-3xl font-bold py-8 px-12 rounded-full shadow-2xl transform transition-all duration-300 hover:scale-110 hover:rotate-1 active:scale-95 mb-8"
         >
           <Sparkles className="mr-4 w-8 h-8" />
           Let's Make Magic!
+          <Sparkles className="ml-4 w-8 h-8" />
+        </Button>
+
+        {/* Main CTA Button */}
+        <Button
+          onClick={handleStartClick}
+          className="bg-kidYellow hover:bg-yellow-400 text-gray-800 font-fredoka text-2xl md:text-3xl font-bold py-8 px-12 rounded-full shadow-2xl transform transition-all duration-300 hover:scale-110 hover:rotate-1 active:scale-95 mb-8"
+        >
+          <Sparkles className="mr-4 w-8 h-8" />
+          Browse story libraries
           <Sparkles className="ml-4 w-8 h-8" />
         </Button>
 
