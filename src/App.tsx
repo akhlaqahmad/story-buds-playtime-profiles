@@ -11,6 +11,7 @@ import StoryDemo from "./pages/StoryDemo";
 import NotFound from "./pages/NotFound";
 import ParentalDashboard from "./pages/ParentalDashboard";
 import Team from "./pages/Team";
+import StoryLibrary from "./pages/StoryLibrary";
 import { Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/story-demo" element={<StoryDemo />} />
           <Route path="/parental-dashboard" element={<ParentalDashboard />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/stories" element={<StoryLibrary />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
