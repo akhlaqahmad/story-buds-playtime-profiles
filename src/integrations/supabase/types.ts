@@ -131,9 +131,47 @@ export type Database = {
           },
         ]
       }
+      story_audios: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          story_title: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          story_title: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          story_title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      public_story_audios: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          story_title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          story_title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          story_title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
