@@ -22,7 +22,7 @@ export class GoogleAudioService {
   }
 
   static async playTextToSpeech(text: string): Promise<void> {
-    console.log('🎵 Starting TTS for text:', text.substring(0, 50) + '...')
+    console.log('🎵 Starting Google TTS for text:', text.substring(0, 50) + '...')
     
     try {
       console.log('📞 Calling Google TTS API...')
@@ -34,15 +34,15 @@ export class GoogleAudioService {
         }
       })
 
-      console.log('📞 TTS API Response:', { data: !!data, error })
+      console.log('📞 Google TTS API Response:', { data: !!data, error })
 
       if (error) {
-        console.error('❌ TTS API Error:', error)
+        console.error('❌ Google TTS API Error:', error)
         throw error
       }
 
       if (!data || !data.audioContent) {
-        console.error('❌ No audio content received from TTS API')
+        console.error('❌ No audio content received from Google TTS API')
         throw new Error('No audio content received')
       }
 
@@ -70,29 +70,29 @@ export class GoogleAudioService {
       
       return new Promise((resolve, reject) => {
         audio.onended = () => {
-          console.log('✅ Audio playback completed')
+          console.log('✅ Google TTS audio playback completed')
           URL.revokeObjectURL(audioUrl)
           this.currentAudio = null
           resolve()
         }
         audio.onerror = (error) => {
-          console.error('❌ Audio playback error:', error)
+          console.error('❌ Google TTS audio playback error:', error)
           URL.revokeObjectURL(audioUrl)
           this.currentAudio = null
           reject(error)
         }
-        audio.onloadstart = () => console.log('🔄 Audio loading started')
-        audio.oncanplay = () => console.log('✅ Audio can play')
-        audio.onplay = () => console.log('▶️ Audio started playing')
+        audio.onloadstart = () => console.log('🔄 Google TTS audio loading started')
+        audio.oncanplay = () => console.log('✅ Google TTS audio can play')
+        audio.onplay = () => console.log('▶️ Google TTS audio started playing')
         
-        console.log('🎵 Starting audio play...')
+        console.log('🎵 Starting Google TTS audio play...')
         audio.play().catch(error => {
-          console.error('❌ Failed to start audio playback:', error)
+          console.error('❌ Failed to start Google TTS audio playback:', error)
           reject(error)
         })
       })
     } catch (error) {
-      console.error('❌ Error in playTextToSpeech:', error)
+      console.error('❌ Error in Google TTS playTextToSpeech:', error)
       throw error
     }
   }
@@ -149,7 +149,7 @@ export class GoogleAudioService {
   }
 
   static stopAllAudio() {
-    console.log('🛑 Stopping all audio')
+    console.log('🛑 Stopping all Google TTS audio')
     if (this.currentAudio) {
       this.currentAudio.pause()
       this.currentAudio = null
