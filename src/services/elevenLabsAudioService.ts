@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client'
 import { StoryDbService } from './storyDbService'
 
@@ -6,11 +7,25 @@ export class ElevenLabsAudioService {
 
   // Given a story object (with id/audio_url/content), return a public audio URL, generating/uploading if missing.
   static async getOrCreateCachedStoryAudio(story: { id: string, content: string, audio_url?: string }) : Promise<string> {
-    // If the story already has audio_url, return it.
+    // If the story already has audio_url, validate and return it.
     if (story.audio_url) {
-      // Optionally: check if file exists in Supabase Storage (could skip for speed)
-      return story.audio_url;
+      console.log('🎵 Using existing audio URL:', story.audio_url);
+      
+      // Quick validation - check if URL is accessible
+      try {
+        const response = await fetch(story.audio_url, { method: 'HEAD' });
+        if (response.ok) {
+          return story.audio_url;
+        } else {
+          console.warn('⚠️ Existing audio URL not accessible, regenerating...');
+        }
+      } catch (error) {
+        console.warn('⚠️ Error checking existing audio URL, regenerating...', error);
+      }
     }
+
+    console.log('🎵 Generating new audio for story:', story.id);
+    
     // 1. Generate audio via ElevenLabs (using existing code)
     const audioUrl = await this.generateFullStoryAudio(story.content);
 
@@ -19,6 +34,8 @@ export class ElevenLabsAudioService {
 
     // 3. Upload audio to Supabase Storage under bucket 'story-audio', key: story-[id].mp3
     const filePath = `story-${story.id}.mp3`;
+    console.log('📤 Uploading audio to Supabase Storage:', filePath);
+    
     const { data, error } = await supabase.storage
       .from('story-audio')
       .upload(filePath, blob, { upsert: true, contentType: 'audio/mpeg' });
@@ -28,6 +45,8 @@ export class ElevenLabsAudioService {
       throw error;
     }
 
+    console.log('✅ Audio uploaded successfully:', data);
+
     // 4. Get public URL to the uploaded audio file
     const { data: publicUrl } = supabase.storage.from('story-audio').getPublicUrl(filePath);
 
@@ -35,10 +54,15 @@ export class ElevenLabsAudioService {
       throw new Error('Failed to obtain a public audio URL');
     }
 
+    console.log('🔗 Public audio URL created:', publicUrl.publicUrl);
+
     // 5. Save audio_url into the story record
     await StoryDbService.updateStoryAudioUrl(story.id, publicUrl.publicUrl);
 
-    // 6. Return the supabase file's public URL
+    // 6. Clean up the temporary object URL
+    URL.revokeObjectURL(audioUrl);
+
+    // 7. Return the supabase file's public URL
     return publicUrl.publicUrl;
   }
 
@@ -140,6 +164,7 @@ export class ElevenLabsAudioService {
         throw new Error('No audio content received (full story)');
       }
 
+      console.log('🔄 Converting audio data to blob...');
       // Convert base64 audio to blob and make object URL
       const audioBytes = atob(data.audioContent);
       const audioArray = new Uint8Array(audioBytes.length);
@@ -150,6 +175,7 @@ export class ElevenLabsAudioService {
       const audioBlob = new Blob([audioArray], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob);
 
+      console.log('✅ Audio blob created successfully');
       return audioUrl;
     } catch (error) {
       console.error('❌ Error in ElevenLabs generateFullStoryAudio:', error);
